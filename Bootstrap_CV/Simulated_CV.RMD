@@ -1,0 +1,38 @@
+---
+title: "Performing CV on a simulated test set"
+output: html_notebook
+---
+ISLR's Chapter 5 Applied Section Problem 8
+
+Here, we create a simulated test using 100 values from the normal distribution for X, and x - (2*x^2) + (100 values from the normal distribution)
+The plot of y over x is shown below as well
+```{r}
+library(tidyverse)
+library(ISLR)
+set.seed(1)
+x=rnorm(100)
+y = x-2*x^2+rnorm(100)
+ggplot() + 
+  geom_point(mapping = aes(x = x, y = y))
+```
+
+Using a random seed, we create a dataframe with x and y, and then fit four polynomial fits of degrees 1,2,3, and 4 respectively, and output the cross validation error associated with each of these fits
+Even after varying the random seed, the trend stays the same: the linear fit has the highest error, the quadratic fit has the lowest error, and the following fits are slightly larger than the quadratic fit. 
+The Quadratic fit had the smallest CV error, which is expected since the original equation was a quadratic equation.
+```{r}
+set.seed(9)
+data = data.frame(y,x)
+for (i in 1:4) {
+  model = glm(y~poly(x,i),data = data)
+  print(cv.glm(data = data,model)$delta[1])
+}
+```
+
+All of the models agree that the linear and squared term (in the equations that it is present in) are both significant, but that the higher-degree polynomial terms are not significant.
+```{r}
+for (i in 1:4) {
+  model = glm(y~poly(x,i),data = data)
+  print(summary(model)$coef)
+}
+```
+
