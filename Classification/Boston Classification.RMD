@@ -1,0 +1,119 @@
+---
+title: "Boston Dataset Classification Problem"
+output: html_notebook
+---
+Using the Boston data set, fit classification models in order to predict
+whether a given suburb has a crime rate above or below the median.
+Explore logistic regression, LDA, and KNN models using various subsets of the predictors. Describe your findings.
+
+
+Getting a numerical summary of the Boston dataset, the median per capita crime rate by town is .2561. After computing the correlation matrix and scatterplot matrix of the various quantitative variables in Boston, the observed association with per capita crime rate are listed below, as well as the magnitude of their correlation value.
+.4066: proportion of non-retail business acres per town
+.4209: Nitrogen Oxide Concentrations
+.626: index of accessibility to radial highways
+.5828: full-value property-tax rate per$10,000
+.456: lower status of the population 
+Collinearity may present a problem with these various predictors, as the full-value lower status of the population could impact the full-value property tax per $10,000 as well as both Nitrogen oxide concentrations and accessibility to radial highways. Improverished communities could have less access to radial highways and a higher chance of experiencing high concentrations of nitrogen oxide due to their inner-city proximity. Nitrogen oxide concentrations and non-retail businesses are also correlated, since non-retail business space not only attracts cars, but can emit significant nitrogen oxide emissions
+
+
+```{r}
+library(MASS)
+library(tidyverse)
+library(caret)
+library(class)library(ISLR)
+summary(Boston)
+pairs(Boston)
+cor(Boston)
+```
+
+
+Plotting out some of the possible predictor, we see that some of them do suffer from collinearity. Nitrogen Oxide concentrations and non-retail industry have a strong association
+```{r}
+ggplot(data = Boston, aes(x = nox,y=indus)) +
+  geom_point() +
+  geom_smooth()
+ggplot(data = Boston, aes(x = rad,y=tax)) +
+  geom_point() +
+  geom_smooth()
+ggplot(data = Boston, aes(x = tax,y = lstat))+
+  geom_point() +
+  geom_smooth()
+```
+
+Being wary of this collinearity problem, I've decided to keep Nitrogen Oxide Concentration and Lowerstatus populations as one fit, and all of the other possible predictors in another fit. I then will evaluate the VIF
+```{r}
+y  = ifelse(Boston$crim > median(Boston$crim),1,0)
+Boston$crim = y
+set.seed(1)
+```
+
+
+```{r}
+
+training.samples = createDataPartition(Boston$crim,p=.7,list = FALSE)
+train.data = Boston[training.samples,]
+test.data = Boston[-training.samples,]
+```
+
+Looking at the VIF values, we see large values for rm, we see large values for median value of owner-occupied homes, average number of rooms per dwelling, indicates that those variables are most likely correlated with each other. We also see reasonably large VIF values for nox, dis, and lstat. We'll be tweaking our classifier by removing these variables. Baseline F1 scores are also outputted below.
+```{r}
+lr_all = glm(crim~.,data =train.data, family = binomial)
+car::vif(lr_all)
+predictions <- lr_all %>% predict(test.data)
+pred = ifelse(predictions > .5,1,0)
+table(pred,test.data$crim)
+metric = metrics(table(pred,test.data$crim))
+metric
+summary(lr_all)
+```
+
+After removing most of the data so tax and lstat are the leading predictors, we see identical results and metrics, indicating that thes are most likely the dominant predictive variables
+
+Training different classifiers, we get KNN and QDA performing the best on the test set
+```{r}
+lr = glm(crim~.-rm-medv-chas,data =train.data, family = binomial)
+lr_predictions <- lr %>% predict(test.data)
+lr_pred = ifelse(lr_predictions > .5,1,0)
+table(lr_pred,test.data$crim)
+metric = metrics(table(lr_pred,test.data$crim))
+metric
+
+lda.fit = lda(crim~.-rm-medv-chas, data = train.data)
+lda_predictions <- lda.fit %>% predict(test.data)
+lda_class = lda_predictions$class
+metric = metrics(table(lda_class,test.data$crim))
+metric
+
+qda.fit = qda(crim~.-rm-medv-chas, data = train.data)
+qda_predictions <- qda.fit %>% predict(test.data)
+qda_class = qda_predictions$class
+metric = metrics(table(qda_class,test.data$crim))
+table(qda_class,test.data$crim)
+metric
+
+
+knn.pred = knn(data.frame(train.data),data.frame(test.data),train.data$crim,k=3)
+metric = metrics(table(knn.pred, test.data$crim))
+metric
+```
+
+```{r}
+
+```
+
+
+```{r}
+metrics <- function(table) {
+  precision = table[2,2] / (table[2,1] + table[2,2])
+  recall = table[2,2] / (table[1,2] + table[2,2])
+  F1 = 2 * precision * recall / (precision + recall)
+  return(c(precision,recall,F1))
+}
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

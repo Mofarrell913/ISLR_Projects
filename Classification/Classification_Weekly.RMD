@@ -1,0 +1,99 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Here I looked into the Weekly dataset, which gets the previous five day stock market indicators, as well as the direction
+Year and Volume seem to be correlated, but not much else
+
+```{r}
+library(ISLR)
+library(tidyverse)
+dim(Weekly)
+names(Weekly)
+summary(Weekly)
+cor(Weekly[-9])
+```
+
+Doing a logistic regression with all five lag variables + volume, and outputting confusion matrix
+Here, Precision = 557/(557+430) = .564 
+Recall = 557/(557+48) = .92
+Our predictor is predicting UP alot, so our recall is very high, while our precision is lower
+```{r}
+glm.fits = glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+               data = Weekly, family = binomial)
+glm.probs = predict(glm.fits,Weekly[-9], type = "response")
+glm.pred = rep("Down",1089)
+glm.pred[glm.probs >.5]="Up"
+table(glm.pred,Weekly[,9])
+```
+
+performing a logistic regression, LDA classifier, QDA classifier, and KNN classifier with K=1 on the dataset
+```{r}
+train = (Weekly$Year < 2009)
+Weekly.X = Weekly[!train,]
+Direction.X = Weekly$Direction[!train]
+glm.fit = glm(Direction~Lag2, data = Weekly, family = binomial, subset = train)
+lda.fit = lda(Direction~Lag2, data = Weekly, subset = train)
+qda.fit = qda(Direction~Lag2, data = Weekly, subset = train)
+train.X = cbind(Weekly$Lag1,Weekly$Lag2)[train,]
+test.X = cbind(Weekly$Lag1,Weekly$Lag2)[!train,]
+train.Direction = Weekly$Direction[train]
+set.seed(1)
+knn.pred = knn(data.frame(train.X),data.frame(test.X),train.Direction,k=1)
+```
+
+
+```{r}
+glm.probs = predict(glm.fit,Weekly.X,type = "response")
+lda.pred = predict(lda.fit,Weekly.X)
+qda.pred = predict(qda.fit, Weekly.X)
+
+glm.pred = rep("Down", 104)
+glm.pred[glm.probs > .5] = "Up"
+metrics(table(glm.pred,Direction.X))
+
+lda.class = lda.pred$class
+metrics(table(lda.class,Direction.X))
+
+qda.class = qda.pred$class
+metrics(table(qda.class,Direction.X))
+
+metrics(table(knn.pred,Direction.X))
+  
+```
+
+Precision, Recall, and F1 Score Metric Function for Model Selection
+```{r}
+metrics <- function(table) {
+  precision = table[2,2] / (table[2,1] + table[2,2])
+  recall = table[2,2] / (table[1,2] + table[2,2])
+  F1 = 2 * precision * recall / (precision + recall)
+  return(c(precision,recall,F1))
+}
+```
+
+Finds the ideal K value to use for KNN Classifier
+```{r}
+results = data.frame(k = 1:200,F1 = NA, Precision = NA, Recall = NA)
+for (x in 1:200) {
+  knn.pred = knn(data.frame(train.X),data.frame(test.X),train.Direction,k=x)
+  list <- metrics(table(knn.pred,Direction.X))
+  results$Precision[x] <- list[1]
+  results$Recall[x] <- list[2]
+  results$F1[x] <- list[3]
+  
+}
+ggplot(data = results) +
+  geom_point(mapping = aes(x = k, y = F1, color = "F1")) + 
+  geom_smooth(mapping = aes(x = k, y = F1, color = "F1")) + 
+  geom_point(mapping = aes(x = k, y = Precision, color = "Precision")) + 
+  geom_smooth(mapping = aes(x = k, y = Precision, color = "Precision")) + 
+  geom_point(mapping = aes(x = k, y = Recall, color = "Recall")) + 
+  geom_smooth(mapping = aes(x = k, y = Recall, color = "Recall"))
+```
+

@@ -1,0 +1,58 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+
+Fits LDA Classifier to Smarket data using Lag1 and Lag2 as inputs
+Prior probabilities are pi-hats for the respective classes
+Group means shows the estimates for mu hat -> the average of each predictor in the two classes
+Coefficients of Linear Discriminants showcases pretty much is the decision boundary
+
+```{r}
+library(ISLR)
+library(MASS)
+train = (Smarket$Year < 2005)
+Smarket.2005 = Smarket[!train,]
+dim(Smarket.2005)
+Direction.2005 = Smarket$Direction[!train]
+lda.fit = lda(Direction~Lag1+Lag2, data = Smarket, subset = train)
+lda.fit
+```
+
+class contains LDA's predictions about the movement of the market
+posterior -> kth column contains posterior probabilities for the kth class
+x contains the linear discriminants
+Uses predictions for LDA
+```{r}
+lda.pred = predict(lda.fit,Smarket.2005)
+names(lda.pred)
+lda.class = lda.pred$class
+table(lda.class,Direction.2005)
+mean(lda.class==Direction .2005)
+```
+
+Can alter the threshold values
+
+```{r}
+sum(lda.pred$posterior[,1]>=.5)
+sum(lda.pred$posterior[,1]>=.3)
+```
+
+
+Quadratic Linear Discriminant Analysis is fitted to the model, and the accuracy rate of test data is shown below
+60% accuracy rate -> better than chance
+```{r}
+qda.fit = qda(Direction~Lag1+Lag2,data=Smarket,subset = train)
+qda.fit
+qda.class=predict (qda.fit ,Smarket.2005) $class
+table(qda.class,Direction.2005)
+mean(qda.class == Direction.2005)
+
+```
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

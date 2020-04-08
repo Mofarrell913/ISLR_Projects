@@ -1,0 +1,62 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+This provides a summary of the linear regression fit of Median Value of owner-occupied homes ($1000s) and lower status of the population
+```{r}
+LoadLibraries= function (){
++ library(ISLR)
++ library(MASS)
++ library(tidyverse)
++ library(car)
++ print("The libraries have been loaded .")
++ }
+
+LoadLibraries()
+lm.fit = lm(medv~lstat, data = Boston)
+summary(lm.fit)
+```
+
+We can use the names() function in order to find out what other pieces names() of information are stored in lm.fit
+coef() extracts the coefficients, while confint() gets the confidence interals
+The predict() function can be used to produce confidence intervals and prediction intervals for the prediction of medv for a given value of lstat
+```{r}
+names(lm.fit)
+coef(lm.fit)
+confint(lm.fit)
+
+predict(lm.fit, data.frame(lstat = c(5,10,15)),interval = "confidence")
+ggplot(data = Boston) +
+  geom_point(mapping = aes(x = lstat, y= medv)) +
+  geom_smooth(method = "lm", mapping = aes(x = lstat, y = medv))
+ggplot(data = Boston, aes(x = lstat,y= residuals(lm.fit))) +
+  geom_point()
+```
+
+Does a Multiple Regression Fit, getting the R^2, Relative Standard Error
+
+```{r}
+fit = lm(medv~lstat+age, data = Boston)
+summary(fit)
+fit_all = lm(medv~.,data = Boston)
+
+r_squared = summary(fit_all)$r.sq
+RSE = summary(fit_all)$sigma
+vif(fit_all)
+new_fit =lm(medv???.-age ,data=Boston)
+```
+
+Interaction Terms -> beta1:beta2 is the two multiplied together, while beta1*beta2 is the same as beta1+beta2+beta1:beta2
+Below also shows a nonlinear fit. Polynomials can also be initialized with poly(lstat,k), corresponding to lstat^k
+```{r}
+summary(lm(medv~lstat*age, data = Boston))
+lm.fit2=lm(medv???lstat+I(lstat^2), data = Boston)
+summary(lm.fit2)
+anova(lm(medv???lstat, data = Boston),lm.fit2)
+```
+

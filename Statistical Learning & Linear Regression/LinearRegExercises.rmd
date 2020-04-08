@@ -1,0 +1,94 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+
+library(ISLR)
+library(MASS)
+library(tidyverse)
+library(car)
+
+auto = read_csv("Auto.csv",na = c("?","NA"))
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+predict(lm.fit, data.frame(lstat = c(5,10,15)),interval = "confidence")
+```{r}
+fit1 = lm(mpg~horsepower, data = auto)
+summary(fit1)
+predict(fit1,data.frame(horsepower = c(98)),interval = "confidence")
+ggplot(data = auto,aes(x = horsepower,y=mpg)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+pairs(colleges[,1:10])
+
+```{r}
+pairs(auto[,1:8])
+cor(auto[,1:8])
+lm_multi = lm(mpg~.-name,data = auto)
+summary(lm_multi)
+```
+
+```{r}
+set.seed(1)
+X = rnorm(100, mean = 0, sd = 1)
+eps = rnorm(100, mean = 0, sd = .25)
+Y = -1 + .5 * X + eps
+line = lm(Y~X)
+summary(line)
+ggplot() + 
+  geom_point(mapping = aes(x = X, y = Y)) +
+  geom_smooth(method = "lm", mapping =  aes(x = X, y = Y)) +
+  geom_abline(slope=.5, intercept=-1, color="red")
+
+```
+
+
+```{r}
+polyLine = lm(Y~poly(X,2))
+summary(polyLine)
+```
+
+With this first collinearity example, we can reject the null hypothesis for x1 but not x2 if our cuoff is .05
+Plotting just Y and x1, we can reject the null hypothesis of x1 not causing y due to the large t and small p values
+Plotting just Y and x2, we can reject the null hypothesis of x2 not causing y due to the large t and small p values
+THere is no contradiction, as x1 and x2 are collinear. Their effects on y are harder to distinguish when plotted together
+
+```{r}
+set.seed(1)
+x1=runif (100)
+x2=0.5*x1+rnorm (100)/10
+y=2+2*x1+0.3*x2+rnorm(100)
+
+ggplot() +
+  geom_point(mapping = aes(x = x1, y = x2))
+collinear = lm(y~x1+x2)
+l1 = lm(y~x1)
+l2 = lm(y~x2)
+summary(l1)
+summary(l2)
+
+```
+
+
+
+```{r}
+x1 = c(x1,.1)
+x2 = c(x2,.8)
+y = c(y,6)
+l1 = lm(y~x1)
+l2 = lm(y~x2)
+summary(l1)
+summary(l2)
+```

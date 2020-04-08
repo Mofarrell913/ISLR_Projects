@@ -1,0 +1,62 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+Explores Stock Market Data, it's correlations, and plots the only substantial correlation
+
+```{r}
+library(ISLR)
+names(Smarket)
+dim(Smarket)
+summary(Smarket)
+cor(Smarket[,-9])
+ggplot(data = Smarket, aes(x = Smarket$Year,y = Smarket$Volume)) +
+  geom_point()
+```
+
+fits a logisitics gression model (glm is a generalized linear model) to predict direction of the stock market given the percentage returns for the five previous trading days, as well as volume
+Gets a summary of the glm, the coefficients, and then the p-values
+
+```{r}
+glm.fits = glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+               data = Smarket, family = binomial)
+summary(glm.fits)
+summary(glm.fits)$coef
+summary(glm.fits)$coef[,4]
+```
+
+This prediction predicts the probability of the market going up or down on the training data, and we print out the first 10 probabilities
+We also make sure that the probability corresponds to the market going up
+Turn these probabilities into predictions with a threshold value of .5
+We then output the confusion matrix, and training prediction rate
+```{r}
+glm.probs = predict(glm.fits,type = "response")
+glm.probs[1:10]
+contrasts(Smarket$Direction)
+glm.pred = rep("Down",1250)
+glm.pred[glm.probs > .5] = "Up"
+table(glm.pred,Smarket$Direction)
+mean(glm.pred == Smarket$Direction)
+```
+
+We now use test set data, fit a new model, and use that to predict the dataset
+Using the test set to get the error rate from the set
+```{r}
+train = (Smarket$Year < 2005)
+Smarket.2005 = Smarket[!train,]
+dim(Smarket.2005)
+Direction.2005 = Smarket$Direction[!train]
+glm.fit2 = glm(Direction ~ Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+               data = Smarket, family = binomial, subset = train)
+glm.probs = predict(glm.fit2,Smarket.2005, type = "response")
+glm.pred=rep("Down",252)
+glm.pred[glm.probs >.5]="Up"
+table(glm.pred ,Direction.2005)
+mean(glm.pred != Direction.2005)
+```
+
+
+

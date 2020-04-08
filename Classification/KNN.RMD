@@ -1,0 +1,76 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(class)
+library(ISLR)
+library(MASS)
+library(tidyverse)
+train = (Smarket$Year < 2005)
+Smarket.2005 = Smarket[!train,]
+dim(Smarket.2005)
+Direction.2005 = Smarket$Direction[!train]
+
+```
+
+
+knn() forms predictions using a single command. The function
+requires four inputs.
+
+1. A matrix containing the predictors associated with the training data,
+labeled train.X below.
+2. A matrix containing the predictors associated with the data for which
+we wish to make predictions, labeled test.X below.
+3. A vector containing the class labels for the training observations,
+labeled train.Direction below.
+4. A value for K, the number of nearest neighbors to be used by the
+classifier.
+
+```{r}
+train.X = cbind(Smarket$Lag1,Smarket$Lag2)[train,]
+test.X = cbind(Smarket$Lag1,Smarket$Lag2)[!train,]
+train.Direction = Smarket$Direction[train]
+set.seed(1)
+knn.pred=knn(train.X,test.X,train.Direction ,k=3)
+table(knn.pred, Direction.2005)
+```
+
+
+Here we work with the caravan dataset, which shows people who purchased the caravan insurance policy
+featury scale so that each value is standardized with mean of zero and a standard deviation of one
+
+Get training and test data, fit KNN classifier, and find out it's worse than just guessing no, but KNN does ar bette than guessing when we output a confusion matrix when it comes to precision
+```{r}
+dim(Caravan)
+attach(Caravan)
+summary(Purchase)
+standardized.X= scale(Caravan [,-86])
+
+test = 1:1000
+train.X = standardized.X[-test,]
+test.X = standardized.X[test,]
+train.Y = Purchase[-test]
+test.Y = Purchase[test]
+set.seed(1)
+knn.pred = knn(train.X,test.X,train.Y,k=1)
+mean(test.Y != knn.pred)
+mean(test.Y != "No")
+table(knn.pred,test.Y)
+detach(Caravan)
+```
+
+Fitting with K=3 and K=5, we get a much higher success rate, indicating that out classifier is finding actual patterns in the data, as we are getting more precise
+```{r}
+knn.pred = knn(train.X,test.X,train.Y,k=3)
+table(knn.pred,test.Y)
+
+knn.pred = knn(train.X,test.X,train.Y,k=5)
+table(knn.pred,test.Y)
+```
+
