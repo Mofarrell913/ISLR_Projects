@@ -1,0 +1,31 @@
+---
+title: "Default Classifier and Using the Bootstrap"
+output: html_notebook
+---
+
+This code is for ISLR's Chapter 5 Applied Section Problem 6
+"We continue to consider the use of a logistic regression model to predict the probability of default using income and balance on the
+Default data set. In particular, we will now compute estimates for the standard errors of the income and balance logistic regression coefficients in two different ways: (1) using the bootstrap, and (2) using the standard formula for computing the standard errors in the glm() function. Do not forget to set a random seed before beginning your analysis."
+
+Here, we set create a logistic classifier for predicting whether an individual will default on their credit card debt given their balance and income. We then output the model specifications to see the estimated standard errors, which in this case, are .435, 2.27e-4, and 4.985e-6
+```{r}
+library(ISLR)
+library(tidyverse)
+library(boot)
+
+set.seed(123)
+model = glm(default~balance+income,data = Default, family = "binomial")
+summary(model)
+```
+
+Boot function which fits a logistic regression model specified indexes
+@param data, the dataset the model is fitted to
+@param index, a list of indices that indicate the training portion of the data
+```{r}
+boot.fn = function(data, index) {
+   return(coef(glm(default~balance+income,data=data , subset=index,family = "binomial")))
+}
+boot(Default,boot.fn,R=1000)
+```
+
+Comparing the bootstrap estimated standard errors, of .435, 2.27e-4,and 4.99e-6 to the summary estimations of.435, 2.27e-4, and 4.985e-6, the standard errors outputted by the glm function were accurate
