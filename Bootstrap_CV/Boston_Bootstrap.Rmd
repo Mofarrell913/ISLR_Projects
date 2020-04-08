@@ -1,0 +1,53 @@
+---
+title: "Boston Bootstrap"
+output: html_notebook
+---
+
+This is for ISLR's chapter 5 applied section problem 9, where we are using the Boston dataset from the MASS library
+
+Here, we get estimates for the average and the standard error of the median value of owner-occupied homes in thousands of dollars
+```{r}
+library(MASS)
+library(boot)
+library(ISLR)
+library(tidyverse)
+
+mu = mean(Boston$medv)
+mu
+SE = sd(Boston$medv)/sqrt(length(Boston$medv))
+SE
+
+```
+
+Using the bootstrap, we get a standard error for the average of the median value of owner-occupied homes in thousands of dollars of .412, and an average of 22.533, indicating that there's a 95% chance that the true average of the median value of owner-occupied homes (in $1000s) lies between 21.709 and 23.357.
+```{r}
+set.seed(1)
+boot.fn = function(data, index) {
+  return(mean(data[index]))
+}
+boot(Boston$medv,boot.fn,R=1000)
+t.test(Boston$medv)
+```
+
+
+Here, we estimate the standard error of the median using the bootstrap, which is .380
+```{r}
+med = median(Boston$medv)
+med
+boot.fn2 = function(data,index){
+  return(median(data[index]))
+}
+boot(Boston$medv, boot.fn2,R=1000)
+```
+
+
+Here, we provide an estimate for the 10th percentile of the median value of owern-occupied homes in the Boston dataset, and we compute the standard error of this parameter using the bootstrap, which is .00515, as well as the bootstrap's estimate of the median value of the 10th percentile of owner-occupied homes in boston, which is 12.75
+```{r}
+percentile = quantile(Boston$medv,.1)
+percentile
+boot.fn3 = function(data,index) {
+  return(quantile(data[index],.1))
+}
+boot(Boston$medv,boot.fn3,R=1000)
+```
+
