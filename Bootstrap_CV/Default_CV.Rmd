@@ -1,0 +1,64 @@
+---
+title: "Default Classifier and CV assessment"
+output: html_notebook
+---
+
+This is ISLR's Chapter 5 applied section problem 5
+"In Chapter 4, we used logistic regression to predict the probability of
+default using income and balance on the Default data set. We will
+now estimate the test error of this logistic regression model using the
+validation set approach. Do not forget to set a random seed before
+beginning your analysis."
+
+
+To answer part a, we first have to fit a logistic regression model that uses income and balance to predict default. We will then use the validation set approach to measure the logistic regression model's error. Different seeds are to observe the variance in the average error of the logistic regression fit.
+
+Logistic Models were fit with and without the student dummy variable, and the model without the student dummy variable had a lower error than its counterpart, suggesting that including the student dummy variable did not help the logistic classifier in predicting whether an individual would default.
+```{r}
+library(MASS)
+library(ISLR)
+library(tidyverse)
+library(caret)
+student = rep(0,3)
+without_student = rep(0,3)
+for (i in 1:3)
+{
+  without_student[i] = ValidationSetApproach(seed=i)
+  student[i] = ValidationSetApproachStudent(seed=i)
+}
+print("Average with Student Dummy Variable")
+mean(student)
+print("Average without Student Dummy Variable")
+mean(without_student)
+```
+
+This function takes in a seed, and uses a validation set approach to split the data in the Default dataset. The training portion of the data set is used to train a logistic regression model, whose error is computed and returned with the test portion of the dataset.
+@param n, the size of the dataset
+@param seed, for reproducibility
+@return the mean error for the logistic model fit
+```{r}
+ValidationSetApproach = function(n=10000,seed) {
+  set.seed(seed)
+  train = sample(n,n/2)
+  model = glm(default ~ income + balance, data = Default, subset = train, family = "binomial")
+  glm.pred = predict(model,Default[-train,],type = "response")
+  predictions = ifelse(glm.pred >.5,'Yes','No')
+  return(mean(predictions != Default[-train,]$default))
+}
+```
+ 
+This function is nearly identical to the ValidationSetApproach function above, except it also fits the Logistic Regression Model using the student dummy variable. 
+@param n, the size of the dataset
+@param seed, for reproducibility
+@return the mean error for the logistic model fit
+```{r}
+ValidationSetApproachStudent = function(n=10000,seed) {
+  set.seed(seed)
+  train = sample(n,n/2)
+  model = glm(default ~ income + balance + student, data = Default, subset = train, family = "binomial")
+  glm.pred = predict(model,Default[-train,],type = "response")
+  predictions = ifelse(glm.pred >.5,'Yes','No')
+  return(mean(predictions != Default[-train,]$default))
+}
+```
+
