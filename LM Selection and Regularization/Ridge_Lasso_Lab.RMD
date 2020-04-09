@@ -1,0 +1,24 @@
+---
+title: "Ridge Regression and the Lasso"
+output: html_notebook
+---
+
+Here, the glmnet package is used to perform ridge regression and the lasso
+model.matrix produces a matrix corresponding to 19 predictors, and also transforms any qualitative variables into dummy variables
+
+```{r}
+library(ISLR)
+library(leaps)
+library(tidyverse)
+library(glmnet)
+Hitters = na.omit(Hitters)
+x = model.matrix(Salary~.,Hitters)[,-1]
+y = Hitters$Salary
+```
+
+
+
+```{r}
+
+```
+
