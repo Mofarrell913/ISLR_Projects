@@ -1,0 +1,118 @@
+---
+title: "Linear Model Selection and Regularization Lab"
+output: html_notebook
+---
+
+This notebook contains the code described in ISLR's Chapter labs section
+
+Lab 1 - Best Subset Selection
+Applying the best subset selection approach to the Hitters data. We
+wish to predict a baseball player's Salary on the basis of various statistics associated with performance in the previous year.
+Here, we remove the rows that have missing values in any variable. Then, we perform best subset selection using the regsubsets() function, which is part of the leaps library.
+
+The asterisk indicates that a given variable is included in the corresponding model e.g. best two-variable model contains only Hits and CRBI.
+
+```{r}
+library(ISLR)
+library(leaps)
+library(tidyverse)
+dataset = Hitters
+names(dataset)
+dim(dataset)
+sum(is.na(dataset$Salary))
+dataset = na.omit(dataset)
+dim(dataset)
+sum(is.na(dataset))
+
+regfit.full = regsubsets(Salary~.,dataset)
+summary(regfit.full)
+
+```
+
+We can plot the data from the subset function ourselves, or we can use the regsubsets()'s built-in plot command
+Looking at the BIC graph, we see that the lowest BIC is the six-variable model that contains AtBat, Hits, Walks, CRBI, DIvisionW, and PutOuts. We'll get the coefficients for this model.
+```{r}
+regfit.full = regsubsets(Salary~.,dataset, nvmax = 19)
+reg.summary = summary(regfit.full)
+names(reg.summary)
+ggplot() + 
+  geom_smooth(mapping = aes(x = 1:19, y = reg.summary$bic, colour = "BIC")) + 
+  geom_smooth(mapping = aes(x = 1:19, y = reg.summary$cp, colour = "Cp")) 
+plot(regfit.full, scale = "r2")
+plot(regfit.full, scale = "adjr2")
+plot(regfit.full, scale = "Cp")
+plot(regfit.full, scale = "bic")
+coef(regfit.full,6)
+```
+
+Here, we can use regsubsets() function to perform forward or backward setpwise selection. We see that for both methods, the first six-variable models are each identical for best subset and forward selection, but at the seventh these two, plus subset selection, are different
+```{r}
+regfwd = regsubsets(Salary~.,data = dataset, nvmax = 19, method = "forward")
+summary(regfwd)
+regbwd = regsubsets(Salary~.,data = dataset, nvmax = 19, method = "backward")
+summary(regbwd)
+```
+
+Here, we'll be using the validation set apporach to evaluate our models. we'll set up a model matrix, and for each size i, we extract the coefficients from regfit.best for the best model of size i, multiply then into the appropriate columns of the test model matrix to form the preductions, and computer test MSE.
+
+From this, we can deduce that the 10-variable fit performed the best, and we have extracted the coefficients from this model
+```{r}
+set.seed(1)
+train = sample(c(TRUE, FALSE), nrow(dataset), rep = TRUE)
+test = (!train)
+regfit.best = regsubsets(Salary~., data = dataset[train,], nvmax= 19)
+test.mat = model.matrix(Salary~.,data = dataset[test,])
+val.errors = rep(NA,19)
+for (i in 1 : 19) {
+  coefi = coef(regfit.best,id=i)
+  
+  pred = test.mat[,names(coefi)]%*%coefi
+ 
+  val.errors[i] = mean((dataset$Salary[test]-pred)^2)
+  
+}
+val.errors
+which.min(val.errors)
+coef(regfit.best,10)
+```
+
+This function is pretty much the predict() method for regsubsets()
+```{r}
+predict.regsubsets = function(object,newdata,id,...) {
+  form = as.formula(object$call[[2]])
+  mat=  model.matrix(form,newdata)
+  coefi = coef(object,id=id)
+  xvars = names(coefi)
+  mat[,xvars]%*%coefi
+}
+```
+
+Finally perform the best subset selection on the full data set, and select the best ten-variable model, but first, notice how the coefficients in this 10 variable model is different from our subset mode.
+We now try to choose among the models of different sizes uses cross-validation. We get the cross validation-errors, and make our predictions for each model size.
+Output of cv.errors is a 10x19 matrix where the (i,j)th element corresponds to the MSE for the ith cross-validation fold for the best j-variable model 
+
+mean.cv.errors is the MSE for which the jth element is the cross-validation error for the jth variable
+```{r}
+set.seed(1)
+regfit.best = regsubsets(Salary~.,data = dataset, nvmax = 19)
+coef(regfit.best,10)
+k = 10
+folds = sample(1:k,nrow(dataset),replace = TRUE)
+cv.errors = matrix(NA,k,19,dimnames= list(NULL,paste(1:19)))
+for(j in 1:k){
+  best.fit = regsubsets(Salary~.,data = dataset[folds!=j,], nvmax = 19)
+  for(i in 1:19){
+    pred = predict(best.fit,dataset[folds == j,], id = i)
+    cv.errors[j,i] = mean((dataset$Salary[folds == j] - pred)^2)
+  }
+}
+mean.cv.errors = apply(cv.errors,2,mean)
+mean.cv.errors
+```
+
+We see through the k-fold cross validation test above that the cross-validation selects an 11-variable model. We now use best subset seleciton on the full data set to obtain the 11-variable model
+```{r}
+reg.best = regsubsets(Salary~.,data = dataset, nvmax = 19)
+coef(reg.best,11)
+```
+
