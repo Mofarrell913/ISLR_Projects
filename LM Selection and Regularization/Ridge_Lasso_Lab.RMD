@@ -1,0 +1,85 @@
+---
+title: "Ridge Regression and the Lasso"
+output: html_notebook
+---
+
+Here, the glmnet package is used to perform ridge regression and the lasso
+model.matrix produces a matrix corresponding to 19 predictors, and also transforms any qualitative variables into dummy variables
+
+```{r}
+library(ISLR)
+library(leaps)
+library(tidyverse)
+library(glmnet)
+Hitters = na.omit(Hitters)
+x = model.matrix(Salary~.,Hitters)[,-1]
+y = Hitters$Salary
+```
+
+
+glmnet() is the function used to fit ridge/lasso regression
+alpha=0 indicates a ridge regresion model, while alpha=1 indicates a lasso model
+It also performs the regression with lambda equal to the grid of values ranging from 10^10 to 10^-2
+By default, the glmnet() function standardizes the variables
+ridge holds a 20x1000 matrix, with 20 rows for each predictor + intercept, and 100 columns for each lambda
+We use predict to obtain the ridge regression coefficients for lambda = 50
+```{r}
+grid = 10^seq(10,-2,length=100)
+ridge = glmnet(x,y,alpha = 0, lambda = grid)
+ridge$lambda[50]
+coef(ridge)[,50]
+ridge$lambda[60]
+coef(ridge)[,60]
+predict(ridge,s=50,type = "coefficients")[1:20,]
+```
+
+Set the random seed for reproducibility, and then split the dataset in half.
+Ridge regression model with lambda = 4 has a much lower MSE than a ridge regression where lambda = 10^10
+```{r}
+
+train = sample(1:nrow(x),nrow(x)/2)
+test = (-train)
+y.test = y[test]
+ridge = glmnet(x[train,],y[train],alpha = 0,lambda = grid, thresh=1e-12)
+
+ridge.pred = predict(ridge,s=4,newx = x[test,])
+mean((ridge.pred -y.test)^2)
+ridge.pred = predict(ridge,s=1e10,newx = x[test,])
+mean((ridge.pred -y.test)^2)
+```
+
+Find the best lambda to use for the model using CV tests, and then we get that largest lambda value, and use it to find a model over the entire dataset
+```{r}
+set.seed(1)
+cv.out = cv.glmnet(x[train,],y[train],alpha = 0)
+plot(cv.out)
+bestlam = cv.out$lambda.min
+bestlam
+ridge.pred = predict(ridge,s=bestlam,newx = x[test,])
+mean((ridge.pred-y.test)^2)
+
+out = glmnet(x,y,alpha = 0)
+predict(out,type = "coefficients", s= bestlam)[1:20,]
+```
+
+Here, we fit a lasso regression, and after plotting it, we see that depending on the choice of lambda, some of the coefficients will equal zero. We'll perform a cross-validation and compute the associated test error
+
+Here, we see a substantially lower test set MSE than the least squares, and similar to the MSE ridge regression with lambda chosen by cross validation
+
+However, when looking at the results, the lasso model contains only seven variables, as 12 of the 19 are exactly zero
+```{r}
+set.seed(1)
+lasso = glmnet(x[train,],y[train],alpha=1,lambda=grid)
+plot(lasso)
+
+cv.out = cv.glmnet(x[train,],y[train],alpha=1)
+plot(cv.out)
+bestlam = cv.out$lambda.min
+lasso.pred = predict(lasso,s=bestlam,newx = x[test,])
+mean((lasso.pred-y.test)^2)
+
+out = glmnet(x,y,alpha=1,lambda=grid)
+lasso.coef = predict(out,type = "coefficients", s = bestlam)[1:20,]
+lasso.coef[lasso.coef!=0]
+```
+
