@@ -17,6 +17,7 @@ y = Hitters$Salary
 ```
 
 
+<<<<<<< HEAD
 glmnet() is the function used to fit ridge/lasso regression
 alpha=0 indicates a ridge regresion model, while alpha=1 indicates a lasso model
 It also performs the regression with lambda equal to the grid of values ranging from 10^10 to 10^-2
