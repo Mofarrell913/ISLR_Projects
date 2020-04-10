@@ -1,0 +1,49 @@
+---
+title: "PCR and PLS Regression"
+output: html_notebook
+---
+
+
+Here we perform PCR to the hitters data to predict salary
+scale = TRUE standardizes each predictor prior to generating the principal components
+Validation="CV" causes pcr() to compute the ten-fold cross-validation error for each possible value of M, the numbr of principal components used
+Using summary, we can get the results of he cross validation tests, and we can also plot them using the validationplot() function, which shows that CV is roughly the same when just one principal component is used
+Using SUmmary, we also get the % variance explained
+
+```{r}
+library(pls)
+library(ISLR)
+Hitters = na.omit(Hitters)
+set.seed(1)
+pcr.fit = pcr(Salary~.,data = Hitters,scale = TRUE,validation = "CV")
+summary(pcr.fit)
+validationplot(pcr.fit,val.type="MSEP")
+
+x = model.matrix(Salary~.,Hitters)[,-1]
+y = Hitters$Salary
+train = sample(1:nrow(x),nrow(x)/2)
+test = (-train)
+```
+
+Here, we perform PCR on the training data and evaluate its test set performance when M = 7. It performs on par with rige regression and the lasso, but the final model is more difficult to interpret, as it does not perform variable selection or coefficient estimates
+We then fit PCR on the full data set
+```{r}
+set.seed(1)
+pcr.fit = pcr(Salary~., data = Hitters, subset = train, scale = TRUE, validation = "CV")
+validationplot(pcr.fit,val.type = "MSEP")
+pcr.pred = predict(pcr.fit, x[test,],ncomp = 7)
+mean((pcr.pred-y.test)^2)
+pcr.fit = pcr(y~x, scale = TRUE,ncomp = 7)
+```
+
+We implement a partal least squares using the pslr function, which has syntax similar to that of the PCR function.
+We find the component with the lowest CV score, and find the MSE when M = 2, which is slightly higher than the MSE obtained by ridge, lasso, and PCR
+```{r}
+set.seed(1)
+pls.fit = plsr(Salary~., data = Hitters, subset = train, scale = TRUE, validation = "CV")
+summary(pls.fit)
+validationplot(pls.fit,val.type = "MSEP")
+pls.pred = predict(pls.fit,x[test,],ncomp = 2)
+mean((pls.pred-y.test)^2)
+```
+
