@@ -1,0 +1,67 @@
+---
+title: "Simulated Best Subset Selection"
+output: html_notebook
+---
+
+This is for ISLR's Applied Section Chapter 8, where we will generate simulated data and then use this data to perform best subset selection
+
+Below, simulated data is created, and regsubsets() function performs best subset selection to choose the best model containing the predictors X, X^2,...,X^10
+Using Subset Selection, we see that CP and BIC is the lowest when only the intercept, x,x^2,and x^3 terms are used
+Adjusted R^2 is highest though when the seventh and eigth X terms are also included. Because CP and BIC are more standard measurements for model fit, we'll assume that the first three terms are the best
+```{r}
+library(leaps)
+library(tidyverse)
+library(pls)
+set.seed(1)
+X = rnorm(100)
+e = rnorm(100)
+Y = 1 + 2*X + 3 * (X^2) + 4*(X^3) + e
+dataset = data.frame(y=Y,x=X)
+regfit.full = regsubsets(Y~poly(x,10), dataset)
+regfit.summary = summary(regfit.full)
+plot(regfit.full, scale = "r2")
+plot(regfit.full, scale = "adjr2")
+plot(regfit.full, scale = "Cp")
+plot(regfit.full, scale = "bic") 
+
+x = model.matrix(Y~poly(x,10),dataset)[,-1]
+train = sample(1:nrow(x),nrow(x)/2)
+test = (-train)
+test_y= Y[test]
+```
+
+When performing forward and backward subset selection, the results are the same in terms of each model
+```{r}
+
+regfit.forward = regsubsets(Y~poly(x,10),dataset, method = "forward")
+summary(regfit.forward)
+regfit.backward = regsubsets(Y~poly(x,10),data,method = "backward")
+summary(regfit.backward)
+
+```
+
+Here, we fit both a lasso and ridge model of all 10 varibles and choose the best lambda value, and do a CV test, and through this, we see that the Lasso regression has a far smaller MSE, suggesting most of the variables reduce to 0
+```{r}
+set.seed(1)
+grid = 10^seq(10,-2,length=100)
+cv.ridge = cv.glmnet(x[train,],Y[train],alpha = 0)
+cv.lasso = cv.glmnet(x[train,],Y[train],alpha = 1)
+plot(cv.ridge)
+plot(cv.lasso)
+bestlam_ridge = cv.ridge$lambda.min
+bestlam_lasso = cv.lasso$lambda.min
+bestlam_ridge
+bestlam_lasso
+
+ridge = glmnet(x[train,],Y[train],alpha = 0,lambda = grid, thresh=1e-12)
+lasso = glmnet(x[train,],Y[train],alpha=1,lambda=grid)
+
+ridge.pred = predict(ridge,s=bestlam_ridge,newx = x[test,])
+mean((ridge.pred-test_y)^2)
+lasso.pred = predict(lasso, s=bestlam_lasso,newx = x[test,])
+mean((lasso.pred-test_y)^2)
+```
+
+
+
+
