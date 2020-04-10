@@ -62,6 +62,4 @@ lasso.pred = predict(lasso, s=bestlam_lasso,newx = x[test,])
 mean((lasso.pred-test_y)^2)
 ```
 
-
-
-
+Thus, since Lasso regression reduces most of the variables to 0, it is the better fit than ridge regression, and this shows through its MSE
