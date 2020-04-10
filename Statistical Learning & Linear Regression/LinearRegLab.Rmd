@@ -1,21 +1,17 @@
 ---
-title: "R Notebook"
+title: "Linear Regression Lab"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
-This provides a summary of the linear regression fit of Median Value of owner-occupied homes ($1000s) and lower status of the population
 ```{r}
 LoadLibraries= function (){
-+ library(ISLR)
-+ library(MASS)
-+ library(tidyverse)
-+ library(car)
-+ print("The libraries have been loaded .")
-+ }
+ library(ISLR)
+ library(MASS)
+ library(tidyverse)
+ library(car)
+ print("The libraries have been loaded .")
+ }
 
 LoadLibraries()
 lm.fit = lm(medv~lstat, data = Boston)
