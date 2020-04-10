@@ -1,0 +1,40 @@
+---
+title: "College Regularization"
+output: html_notebook
+---
+
+This is ISLR's Chapter 6 Applied Section Problem 9
+
+```{r}
+library(ISLR)
+library(leaps)
+library(tidyverse)
+library(glmnet)
+data = College
+
+sample = sample(dim(data)[1],.5 * dim(data)[1])
+train = data[sample,]
+test = data[-sample,]
+x = model.matrix(Apps~.,College)[,-1]
+y = College$Apps
+```
+
+
+```{r}
+linear = lm(Apps~.,data = train)
+grid = 10^seq(10,-2,length=100)
+ridge = glmnet(x,y,alpha = 0, lambda = grid)
+lasso = glmnet(x,y,alpha = 0, lambda = grid)
+
+cv.ridge = cv.glmnet(x[sample,],y[sample],alpha = 0)
+plot(cv.ridge)
+bestlam_ridge = cv.ridge$lambda.min
+bestlam_ridge
+
+cv.lasso = cv.glmnet(x[sample,],y[sample],alpha=1)
+plot(cv.lasso)
+bestlam_lasso = cv.lasso$lambda.min
+bestlam_lasso
+
+```
+
