@@ -10,31 +10,89 @@ library(ISLR)
 library(leaps)
 library(tidyverse)
 library(glmnet)
+library(pls)
 data = College
-
-sample = sample(dim(data)[1],.5 * dim(data)[1])
+set.seed(1)
+sample = sample(1:nrow(data),nrow(data)*.7)
 train = data[sample,]
 test = data[-sample,]
-x = model.matrix(Apps~.,College)[,-1]
+x.trainmat = model.matrix(Apps~.,data = train)[,-1]
+x.testmat = model.matrix(Apps~.,data = test)[,-1]
 y = College$Apps
 ```
 
-
+Here, we fit five models, a generic multivariable linear regression, a ridge regression, a lasso regression, a PCR, and a PLS model onto the training set, and output the MSE to see which is the lowest. We see here that Lasso regression yields the lowest MSE, while Ridge regression provides a lower MSE than ordinary linear regression
 ```{r}
 linear = lm(Apps~.,data = train)
-grid = 10^seq(10,-2,length=100)
-ridge = glmnet(x,y,alpha = 0, lambda = grid)
-lasso = glmnet(x,y,alpha = 0, lambda = grid)
 
-cv.ridge = cv.glmnet(x[sample,],y[sample],alpha = 0)
-plot(cv.ridge)
-bestlam_ridge = cv.ridge$lambda.min
+ridge = glmnet(x.trainmat,train$Apps,alpha = 0)
+lasso = glmnet(x.trainmat,train$Apps,alpha = 1)
+
+cv.fit = cv.glmnet(x.trainmat,train$Apps,alpha = 0)
+
+bestlam_ridge = cv.fit$lambda.min
 bestlam_ridge
 
-cv.lasso = cv.glmnet(x[sample,],y[sample],alpha=1)
-plot(cv.lasso)
-bestlam_lasso = cv.lasso$lambda.min
+cv.fit = cv.glmnet(x.trainmat,train$Apps,alpha=1)
+
+bestlam_lasso = cv.fit$lambda.min
 bestlam_lasso
 
+ridge.pred = predict(ridge,s=bestlam_ridge,newx = x.testmat)
+mean((ridge.pred-test$Apps)^2)
+
+lasso.pred = predict(lasso,s=bestlam_lasso,newx = x.testmat)
+mean((lasso.pred - test$Apps)^2)
+
+lm.pred = predict(linear, test)
+mean((lm.pred - test$Apps)^2)
+
+```
+
+
+
+Here, we fit a PCR model to the training set, observing that the MSE is the lowest when the 16 and 17 princpal components are used, but the MSE drops off dramatically when ~3 principal components are used. We fit both models and compare the MSEs, seeing that the one with 16 principal components yields the lowest MSE
+
+
+```{r}
+
+pcr.fit = pcr(Apps~., data = data, subset = sample, scale = TRUE, validation = "CV")
+validationplot(pcr.fit,val.type = "MSEP")
+summary(pcr.fit)
+pcr.pred = predict(pcr.fit, x.testmat,ncomp = 16)
+mean((pcr.pred-y[-sample])^2)
+pcr.pred2 = predict(pcr.fit, x.testmat,ncomp = 3)
+mean((pcr.pred2-y[-sample])^2)
+```
+
+A partial least squares model is now fit to the sample data
+Validation plot lets us see that the 7 components yields the lowest MSE
+
+```{r}
+pls.fit = plsr(Apps~., data = data, subset = sample, scale = TRUE, validation = "CV")
+summary(pls.fit)
+validationplot(pls.fit,val.type = "MSEP")
+pls.pred = predict(pls.fit,x.testmat,ncomp = 7)
+mean((pls.pred-y[-sample])^2)
+
+```
+
+
+Plotting out the bar graph, we should see lasso and ridge regression having comparable results, as both are better than the linear fit.
+PLS and PCR models both did worse than linear regression.
+If given the choice, i'd choose fitting this with the lasso regression, as the interpretation of the model would be easier as lasso regression performs variable selection.
+```{r}
+error <- c(mean((lm.pred - test$Apps)^2), mean((ridge.pred-test$Apps)^2), mean((lasso.pred - test$Apps)^2), mean((pcr.pred-test$Apps)^2), mean((pls.pred-test$Apps)^2))
+error
+bars <- tribble(
+  ~method,     ~errors,
+  "linear",error[1],
+  "ridge", error[2],
+  "lasso", error[3],
+  "pcr", error[4],
+  "pls",error[5]
+)
+ggplot(data = bars) + 
+  geom_bar(mapping = aes(x = method, y = errors), stat = "identity")
 ```
 
