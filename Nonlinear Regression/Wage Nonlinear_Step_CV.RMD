@@ -1,0 +1,66 @@
+---
+title: "Wage Nonlinear Regression Problem"
+output: html_notebook
+---
+This is Problem 6 from ISLR's Chapter 7 Applied Section 
+
+Problem is below:
+"Perform polynomial regression to predict wage using age. Use cross-validation to select the optimal degree d for the polynomial. What degree was chosen, and how does this compare to the results of hypothesis testing using ANOVA? Make a plot of the resulting polynomial fit to the data."
+
+We'll first use the summary function to get a good understanding of how many models to cross validate
+Plotting the summary of a 5 degree fit over the entire dataset, we see that up to the fourth degree, the P-Value of our polynomial stays roughly less than or equal to .05. We'll go up beyond this degree for the CV tests
+```{r}
+# Download Libraries, Attach the Wage Dataset, and get training and test sets
+library(ISLR)
+library(boot)
+library(tidyverse)
+attach(Wage)
+set.seed(1)
+train = sample(3000,2100)
+test = -train
+fit = lm(wage~poly(age,5), data = Wage)
+coef(summary(fit))
+detach(Wage)
+```
+
+Using K-Fold Cross Validation with K=4, I plotted out the results for degrees 1 through 10, and after degree 3 or 4, things start to level off
+
+```{r}
+fits = c()
+errors = rep(0,10)
+for (i in 1:10) {
+ 
+  fit = glm(wage~poly(age,i), data = Wage)
+  fits = c(fits, fit)
+  errors[i] = cv.glm(Wage,fit, K= 4)$delta[1]
+}
+errors
+
+ggplot() + 
+  geom_bar(mapping = aes(x = 1:10, y = errors), stat = "identity")
+```
+
+Using a step function, we see that CV error is the lowest when the number of cuts is equal to 8
+```{r}
+errors= rep(NA,9)
+for (i in 2:10)
+{
+  Wage$age.cut = cut(age,i)
+  fit = glm(wage ~ age.cut, data = Wage)
+  errors[i-1] = cv.glm(Wage,fit,K=4)$delta[1]
+}
+errors
+ggplot() + 
+  geom_bar(mapping = aes(x = 2:10, y = errors), stat = "identity")
+```
+
+Step Function with 8 cuts is displayed
+```{r}
+age.range <- range(Wage$age)
+age.grid <- seq(from = age.range[1], to = age.range[2])
+plot(wage~age, data = Wage, col = "darkgrey")
+fit = glm(wage ~ cut(age,8), data = Wage)
+pred = predict(fit, list(age = age.grid))
+lines(age.grid,pred, col = "red", lwd = 2)
+```
+
