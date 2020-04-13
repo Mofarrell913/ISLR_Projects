@@ -1,0 +1,35 @@
+---
+title: "Wage other Predictors Problem"
+output: html_notebook
+---
+
+This is Problem 7 For ISLR's Chapter 7 Applied Section
+"The Wage data set contains a number of other features not explored
+in this chapter, such as marital status (maritl), job class (jobclass),
+and others. Explore the relationships between some of these other
+predictors and wage, and use non-linear fitting techniques in order to
+fit flexible models to the data. Create plots of the results obtained,
+and write a summary of your findings."
+
+We'll begin by getting using all of the variables to predict wage.
+We'll do a multivariable linear regression to start as well as a scatterplot matrix. we'll then examine the p-values from the multivariable regression fit, and take those variables and apply nonlinear regression techniques on them.
+
+We'll mainly be using cross-validation to determine which predictors we should add and not add. 
+
+```{r}
+library(ISLR)
+library(tidyverse)
+library(boot)
+
+attach(Wage)
+names(Wage)
+
+ggplot(data = Wage) + 
+  geom_point(mapping = aes(x=year,y=wage))
+ggplot(data = Wage) + 
+  geom_point(mapping = aes(x=maritl,y=wage))
+ggplot(data = Wage) + 
+  geom_point(mapping = aes(x=jobclass,y=wage))
+detach(Wage)
+```
+
