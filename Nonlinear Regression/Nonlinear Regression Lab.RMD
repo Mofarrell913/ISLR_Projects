@@ -1,0 +1,105 @@
+---
+title: "Non-Linear Modeling Lab"
+output: html_notebook
+---
+
+This is the lab for the Polynomial Regression Lab of ISLR
+
+We re-analyze the Wage data considered in the examples throughout this chapter, in order to illustrate the fact that many of the complex non-linear fitting procedures discussed can be easily implemented in R.
+
+
+First, we fit a fourth degree polynomial for wage using age as a predictor. Returns a linaer combination of of the variables age,age^2,age^3,age^4
+
+Using Raw = T to use the poly() to obtain age, age^2, age^3, age^4 directly. We see nothing really changes in a meaningful way, though the coefficient estimates
+
+Can also get this measurement through the I() function
+```{r}
+library(ISLR)
+attach(Wage)
+fit = lm(wage~poly(age,4), data = Wage)
+coef(summary(fit))
+
+fit2 = lm(wage~poly(age,4,raw = T), data = Wage)
+coef(summary(fit2))
+
+fit2a = lm(wage~age + I(age^2) + I(age^3) + I(age^4), data = Wage)
+coef(fit2a)
+```
+
+Create a grid of values for age at which we want predictions, and then call the generic predict() functions, specifying that we want standard errors
+Finally, we plot the data and add the fit from the degree-4 polynomial
+```{r}
+agelims =range(age)
+age.grid=seq(from=agelims [1],to=agelims [2])
+preds=predict (fit ,newdata =list(age=age.grid),se=TRUE)
+se.bands=cbind(preds$fit +2* preds$se.fit ,preds$fit -2* preds$se.fit)
+
+ par(mfrow=c(1,2),mar=c(4.5,4.5,1,1) ,oma=c(0,0,4,0))
+plot(age ,wage ,xlim=agelims ,cex =.5,col=" darkgrey ")
+title(" Degree -4 Polynomial ",outer=T)
+lines(age.grid ,preds$fit ,lwd=2,col="blue")
+matlines (age.grid ,se.bands ,lwd=1, col=" blue",lty=3)
+```
+Whether or not an orthogonal set of basis functions is produced in the poly() function will not affect the model obtained in a meaningful way, and this is shown because the fitted values are neearly identical
+```{r}
+preds2 = predict(fit2, newdata = list(age = age.grid), se= TRUE)
+max(abs(preds$fit-preds2$fit))
+```
+For specifying the degree of polynomial to use, we could use hypothesis tests. We could use the anova() function ,which performs an analysis of variance (ANOVA, using an F-test) in order to test the hypothesis that a Model M1 is sufficient against the alternative hypothesis that a more complex model M2 is required
+Predictors in M1 must be a subset of the predictors in M2
+P-value of the 4th degree is roughly 5%, indicating that that or a third degree polynomial is sufficient for the data
+
+An alternative to the anova() function is looking into the P values generated with the poly() function, since the square of the T-statistic equals the F-statistic in this case. 
+```{r}
+fit.1 = lm(wage~age, data = Wage)
+fit.2 = lm(wage~poly(age,2),data = Wage)
+fit.3 = lm(wage~poly(age,3),data = Wage)
+fit.4 = lm(wage~poly(age,4),data = Wage)
+fit.5 = lm(wage~poly(age,5),data = Wage)
+anova(fit.1,fit.2,fit.3,fit.4,fit.5)
+```
+
+
+anova() works regardless of if we we use orthogonal polynomials. We can have other terms in the model as well
+An alternative way of choosing what Polynomial to use is to use cross-validation
+```{r}
+fit.1 = lm(wage~education + age, data = Wage)
+fit.2 = lm(wage~education + poly(age,2), data = Wage)
+fit.3 = lm(wage~education + poly(age,3), data = Wage)
+anova(fit.1,fit.2,fit.3)
+```
+
+For the task of predicting if an individual earns more than $250,000 per year, we do the same as before, except we use glm() with family = "binomial". 
+Calculating confidence intervals is a bit more tedios, but is shown below 
+if we did type = "response" for the predict, we would get the probabilities. We did the default type link though, which gives us the results in logit 
+If we did type = "response", the corresponding condifence intervals would not make much sense
+
+We have drawn the age values corresponding to the observations with wage
+values above 250 as gray marks on the top of the plot, and those with wage
+values below 250 are shown as gray marks on the bottom of the plot
+```{r}
+fit = glm(I(wage>250)~poly(age,4),data = Wage, family = binomial)
+preds = predict(fit,newda = list(age = age.grid),se= T)
+pfit = exp(preds$fit)/(1+exp(preds$fit))
+se.bands.logit = cbind(preds$fit +2* preds$se.fit, preds$fit-2* preds$se.fit)
+se.bands = exp(se.bands.logit)/(1+exp(se.bands.logit))
+
+preds = predict(fit, newdata = list(age = age.grid),type = "response", se = T)
+plot(age, I(wage > 250), xlim= agelims, type = "n", ylim = c(0,.2))
+points(jitter(age),I((wage>250)/5),cex = .5, pch = "|", col = "darkgrey")
+```
+
+To fit a step function, we use the cut() function
+Here cut() automatically picked the cutpoints at 33.5, 49, and 64.5 years of age.
+
+The function cut() returns an ordered categorical variable;
+the lm() function then creates a set of dummy variables for use in the regression. 
+
+The age<33.5 category is left out, so the intercept coefficient of $94,160 can be interpreted as the average salary for those under 33.5 years of age, and the other coefficients can be interpreted as the average additional salary for those in the other age groups. 
+```{r}
+table(cut(age,4))
+fit = lm(wage~cut(age,4), data = Wage)
+coef(summary(fit))
+```
+
+
