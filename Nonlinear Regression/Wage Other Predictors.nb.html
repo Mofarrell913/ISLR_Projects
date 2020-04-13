@@ -227,31 +227,140 @@ summary {
 
 <!-- rnb-text-begin -->
 <p>This is Problem 7 For ISLR’s Chapter 7 Applied Section “The Wage data set contains a number of other features not explored in this chapter, such as marital status (maritl), job class (jobclass), and others. Explore the relationships between some of these other predictors and wage, and use non-linear fitting techniques in order to fit flexible models to the data. Create plots of the results obtained, and write a summary of your findings.”</p>
-<p>We’ll begin by getting using all of the variables to predict wage. We’ll do a multivariable linear regression to start as well as a scatterplot matrix. we’ll then examine the p-values from the multivariable regression fit, and take those variables and apply nonlinear regression techniques on them.</p>
-<p>We’ll mainly be using cross-validation to determine which predictors we should add and not add.</p>
+<p>We begin by plotting out age and wage, and then coloring in the points based off of their marital status and job class Based off the data, there is a large cluster of married people in the information jobclass, meaning that this could potentially yield</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShJU0xSKVxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KGJvb3QpXG5cbmF0dGFjaChXYWdlKVxubmFtZXMoV2FnZSlcblxuZ2dwbG90KGRhdGEgPSBXYWdlKSArIFxuICBnZW9tX3BvaW50KG1hcHBpbmcgPSBhZXMoeD15ZWFyLHk9d2FnZSkpXG5nZ3Bsb3QoZGF0YSA9IFdhZ2UpICsgXG4gIGdlb21fcG9pbnQobWFwcGluZyA9IGFlcyh4PW1hcml0bCx5PXdhZ2UpKVxuZ2dwbG90KGRhdGEgPSBXYWdlKSArIFxuICBnZW9tX3BvaW50KG1hcHBpbmcgPSBhZXMoeD1qb2JjbGFzcyx5PXdhZ2UpKVxuZGV0YWNoKFdhZ2UpXG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShJU0xSKVxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KGJvb3QpXG5zZXQuc2VlZCgxKVxubmFtZXMoV2FnZSlcblxuZ2dwbG90KGRhdGEgPSBXYWdlKSArIFxuICBnZW9tX3BvaW50KG1hcHBpbmcgPSBhZXMoeD1hZ2UseT13YWdlLCBjb2wgPSBtYXJpdGwpKVxuZ2dwbG90KGRhdGEgPSBXYWdlKSArIFxuICBnZW9tX3BvaW50KG1hcHBpbmcgPSBhZXMoeD1hZ2UseT13YWdlLCBjb2wgPSBqb2JjbGFzcykpXG5zdW1tYXJ5KFdhZ2UkbWFyaXRsKVxuc3VtbWFyeShXYWdlJGpvYmNsYXNzKVxuXG5cbmBgYCJ9 -->
 <pre class="r"><code>library(ISLR)
 library(tidyverse)
 library(boot)
-
-attach(Wage)
+set.seed(1)
 names(Wage)
 
 ggplot(data = Wage) + 
-  geom_point(mapping = aes(x=year,y=wage))
+  geom_point(mapping = aes(x=age,y=wage, col = maritl))
 ggplot(data = Wage) + 
-  geom_point(mapping = aes(x=maritl,y=wage))
-ggplot(data = Wage) + 
-  geom_point(mapping = aes(x=jobclass,y=wage))
-detach(Wage)</code></pre>
+  geom_point(mapping = aes(x=age,y=wage, col = jobclass))
+summary(Wage$maritl)
+summary(Wage$jobclass)
+</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>We’ll be using analysis of variance to see which features to add and which not to add By analyzing the p-values, combined with the analysis of variance for the fourth predictors, we see that including the marital status and the and jobclass are good predictors for the wage of a given individual, and through our analysis of variance, we see the fourth model, the model with both of those predictors included, did better than the original model without the predictors.</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnYW0pXG5saWJyYXJ5KHNwbGluZXMpXG5saWJyYXJ5KGNhcilcbmdhbS5tMSA9IGdhbSh3YWdlIH4gbG8oeWVhciwgc3BhbiA9IC43KSArIHMoYWdlLCBkZiA9IDUpICsgZWR1Y2F0aW9uLCBkYXRhID0gV2FnZSlcbmBgYCJ9 -->
+<pre class="r"><code>library(gam)
+library(splines)
+library(car)
+gam.m1 = gam(wage ~ lo(year, span = .7) + s(age, df = 5) + education, data = Wage)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoibm9uLWxpc3QgY29udHJhc3RzIGFyZ3VtZW50IGlnbm9yZWRcbiJ9 -->
+<pre><code>non-list contrasts argument ignored</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2FtLm0yID0gZ2FtKHdhZ2UgfiBsbyh5ZWFyLCBzcGFuID0gLjcpICsgcyhhZ2UsZGY9NSkgKyBlZHVjYXRpb24gK2pvYmNsYXNzLCBkYXRhID0gV2FnZSlcbmBgYCJ9 -->
+<pre class="r"><code>gam.m2 = gam(wage ~ lo(year, span = .7) + s(age,df=5) + education +jobclass, data = Wage)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoibm9uLWxpc3QgY29udHJhc3RzIGFyZ3VtZW50IGlnbm9yZWRcbiJ9 -->
+<pre><code>non-list contrasts argument ignored</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2FtLm0zID0gZ2FtKHdhZ2UgfiBsbyh5ZWFyLCBzcGFuID0gLjcpICsgcyhhZ2UsZGY9NSkgKyBlZHVjYXRpb24gK21hcml0bCwgZGF0YSA9IFdhZ2UpXG5gYGAifQ== -->
+<pre class="r"><code>gam.m3 = gam(wage ~ lo(year, span = .7) + s(age,df=5) + education +maritl, data = Wage)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoibm9uLWxpc3QgY29udHJhc3RzIGFyZ3VtZW50IGlnbm9yZWRcbiJ9 -->
+<pre><code>non-list contrasts argument ignored</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2FtLm00ID0gZ2FtKHdhZ2UgfiBsbyh5ZWFyLCBzcGFuID0gLjcpICsgcyhhZ2UsZGY9NSkgKyBlZHVjYXRpb24gK21hcml0bCArIGpvYmNsYXNzLCBkYXRhID0gV2FnZSlcbmBgYCJ9 -->
+<pre class="r"><code>gam.m4 = gam(wage ~ lo(year, span = .7) + s(age,df=5) + education +maritl + jobclass, data = Wage)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoibm9uLWxpc3QgY29udHJhc3RzIGFyZ3VtZW50IGlnbm9yZWRcbiJ9 -->
+<pre><code>non-list contrasts argument ignored</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYW5vdmEoZ2FtLm0xLGdhbS5tMixnYW0ubTMsZ2FtLm00KVxuYGBgIn0= -->
+<pre class="r"><code>anova(gam.m1,gam.m2,gam.m3,gam.m4)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiQW5hbHlzaXMgb2YgRGV2aWFuY2UgVGFibGVcblxuTW9kZWwgMTogd2FnZSB+IGxvKHllYXIsIHNwYW4gPSAwLjcpICsgcyhhZ2UsIGRmID0gNSkgKyBlZHVjYXRpb25cbk1vZGVsIDI6IHdhZ2UgfiBsbyh5ZWFyLCBzcGFuID0gMC43KSArIHMoYWdlLCBkZiA9IDUpICsgZWR1Y2F0aW9uICsgam9iY2xhc3Ncbk1vZGVsIDM6IHdhZ2UgfiBsbyh5ZWFyLCBzcGFuID0gMC43KSArIHMoYWdlLCBkZiA9IDUpICsgZWR1Y2F0aW9uICsgbWFyaXRsXG5Nb2RlbCA0OiB3YWdlIH4gbG8oeWVhciwgc3BhbiA9IDAuNykgKyBzKGFnZSwgZGYgPSA1KSArIGVkdWNhdGlvbiArIG1hcml0bCArIFxuICAgIGpvYmNsYXNzXG4gIFJlc2lkLiBEZiBSZXNpZC4gRGV2IERmIERldmlhbmNlICBQcig+Q2hpKSAgICBcbjEgICAgMjk4Ny4xICAgIDM2OTE4NTUgICAgICAgICAgICAgICAgICAgICAgICAgIFxuMiAgICAyOTg2LjEgICAgMzY3OTY4OSAgMSAgICAxMjE2NiAwLjAwMTQ2MzcgKiogXG4zICAgIDI5ODMuMSAgICAzNTk3NTI2ICAzICAgIDgyMTYzICA5LjUzZS0xNSAqKipcbjQgICAgMjk4Mi4xICAgIDM1ODM2NzUgIDEgICAgMTM4NTIgMC4wMDA2ODYyICoqKlxuLS0tXG5TaWduaWYuIGNvZGVzOiAgMCDigJgqKirigJkgMC4wMDEg4oCYKirigJkgMC4wMSDigJgq4oCZIDAuMDUg4oCYLuKAmSAwLjEg4oCYIOKAmSAxXG4ifQ== -->
+<pre><code>Analysis of Deviance Table
+
+Model 1: wage ~ lo(year, span = 0.7) + s(age, df = 5) + education
+Model 2: wage ~ lo(year, span = 0.7) + s(age, df = 5) + education + jobclass
+Model 3: wage ~ lo(year, span = 0.7) + s(age, df = 5) + education + maritl
+Model 4: wage ~ lo(year, span = 0.7) + s(age, df = 5) + education + maritl + 
+    jobclass
+  Resid. Df Resid. Dev Df Deviance  Pr(&gt;Chi)    
+1    2987.1    3691855                          
+2    2986.1    3679689  1    12166 0.0014637 ** 
+3    2983.1    3597526  3    82163  9.53e-15 ***
+4    2982.1    3583675  1    13852 0.0006862 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3VtbWFyeShnYW0ubTQpXG5gYGAifQ== -->
+<pre class="r"><code>summary(gam.m4)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5DYWxsOiBnYW0oZm9ybXVsYSA9IHdhZ2UgfiBsbyh5ZWFyLCBzcGFuID0gMC43KSArIHMoYWdlLCBkZiA9IDUpICsgXG4gICAgZWR1Y2F0aW9uICsgbWFyaXRsICsgam9iY2xhc3MsIGRhdGEgPSBXYWdlKVxuRGV2aWFuY2UgUmVzaWR1YWxzOlxuICAgICBNaW4gICAgICAgMVEgICBNZWRpYW4gICAgICAgM1EgICAgICBNYXggXG4tMTA4LjY4NCAgLTE5LjUyMyAgIC0yLjU4OCAgIDEzLjc4OCAgMjEzLjI3OCBcblxuKERpc3BlcnNpb24gUGFyYW1ldGVyIGZvciBnYXVzc2lhbiBmYW1pbHkgdGFrZW4gdG8gYmUgMTIwMS43MjkpXG5cbiAgICBOdWxsIERldmlhbmNlOiA1MjIyMDg2IG9uIDI5OTkgZGVncmVlcyBvZiBmcmVlZG9tXG5SZXNpZHVhbCBEZXZpYW5jZTogMzU4MzY3NSBvbiAyOTgyLjA5OSBkZWdyZWVzIG9mIGZyZWVkb21cbkFJQzogMjk4MDguMDMgXG5cbk51bWJlciBvZiBMb2NhbCBTY29yaW5nIEl0ZXJhdGlvbnM6IDIgXG5cbkFub3ZhIGZvciBQYXJhbWV0cmljIEVmZmVjdHNcbiAgICAgICAgICAgICAgICAgICAgICAgICBEZiAgU3VtIFNxIE1lYW4gU3EgRiB2YWx1ZSAgICBQcig+RikgICAgXG5sbyh5ZWFyLCBzcGFuID0gMC43KSAgICAxLjAgICAyNjE4MSAgIDI2MTgxICAyMS43ODYgMy4xODJlLTA2ICoqKlxucyhhZ2UsIGRmID0gNSkgICAgICAgICAgMS4wICAxOTUyMzUgIDE5NTIzNSAxNjIuNDYyIDwgMi4yZS0xNiAqKipcbmVkdWNhdGlvbiAgICAgICAgICAgICAgIDQuMCAxMDkwOTMxICAyNzI3MzMgMjI2Ljk1MCA8IDIuMmUtMTYgKioqXG5tYXJpdGwgICAgICAgICAgICAgICAgICA0LjAgIDEwNDkwNSAgIDI2MjI2ICAyMS44MjQgPCAyLjJlLTE2ICoqKlxuam9iY2xhc3MgICAgICAgICAgICAgICAgMS4wICAgMTQwNTkgICAxNDA1OSAgMTEuNjk5IDAuMDAwNjMzOCAqKipcblJlc2lkdWFscyAgICAgICAgICAgIDI5ODIuMSAzNTgzNjc1ICAgIDEyMDIgICAgICAgICAgICAgICAgICAgICAgXG4tLS1cblNpZ25pZi4gY29kZXM6ICAwIOKAmCoqKuKAmSAwLjAwMSDigJgqKuKAmSAwLjAxIOKAmCrigJkgMC4wNSDigJgu4oCZIDAuMSDigJgg4oCZIDFcblxuQW5vdmEgZm9yIE5vbnBhcmFtZXRyaWMgRWZmZWN0c1xuICAgICAgICAgICAgICAgICAgICAgTnBhciBEZiAgTnBhciBGICAgICBQcihGKSAgICBcbihJbnRlcmNlcHQpICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgXG5sbyh5ZWFyLCBzcGFuID0gMC43KSAgICAgMS45ICAwLjcyODcgICAgMC40NzYyICAgIFxucyhhZ2UsIGRmID0gNSkgICAgICAgICAgIDQuMCAxOC40MTA1IDUuOTk1ZS0xNSAqKipcbmVkdWNhdGlvbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgXG5tYXJpdGwgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFxuam9iY2xhc3MgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBcbi0tLVxuU2lnbmlmLiBjb2RlczogIDAg4oCYKioq4oCZIDAuMDAxIOKAmCoq4oCZIDAuMDEg4oCYKuKAmSAwLjA1IOKAmC7igJkgMC4xIOKAmCDigJkgMVxuIn0= -->
+<pre><code>
+Call: gam(formula = wage ~ lo(year, span = 0.7) + s(age, df = 5) + 
+    education + maritl + jobclass, data = Wage)
+Deviance Residuals:
+     Min       1Q   Median       3Q      Max 
+-108.684  -19.523   -2.588   13.788  213.278 
+
+(Dispersion Parameter for gaussian family taken to be 1201.729)
+
+    Null Deviance: 5222086 on 2999 degrees of freedom
+Residual Deviance: 3583675 on 2982.099 degrees of freedom
+AIC: 29808.03 
+
+Number of Local Scoring Iterations: 2 
+
+Anova for Parametric Effects
+                         Df  Sum Sq Mean Sq F value    Pr(&gt;F)    
+lo(year, span = 0.7)    1.0   26181   26181  21.786 3.182e-06 ***
+s(age, df = 5)          1.0  195235  195235 162.462 &lt; 2.2e-16 ***
+education               4.0 1090931  272733 226.950 &lt; 2.2e-16 ***
+maritl                  4.0  104905   26226  21.824 &lt; 2.2e-16 ***
+jobclass                1.0   14059   14059  11.699 0.0006338 ***
+Residuals            2982.1 3583675    1202                      
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Anova for Nonparametric Effects
+                     Npar Df  Npar F     Pr(F)    
+(Intercept)                                       
+lo(year, span = 0.7)     1.9  0.7287    0.4762    
+s(age, df = 5)           4.0 18.4105 5.995e-15 ***
+education                                         
+maritl                                            
+jobclass                                          
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxudmlmKGdhbS5tNClcbmBgYCJ9 -->
+<pre class="r"><code>vif(gam.m4)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICAgICAgICAgICAgICAgIEdWSUYgRGYgR1ZJRl4oMS8oMipEZikpXG5sbyh5ZWFyLCBzcGFuID0gMC43KSAxLjAwNTA4MyAgMSAgICAgICAgMS4wMDI1MzhcbnMoYWdlLCBkZiA9IDUpICAgICAgIDEuMjc2NDg5ICAxICAgICAgICAxLjEyOTgxOFxuZWR1Y2F0aW9uICAgICAgICAgICAgMS4xMzE5ODQgIDQgICAgICAgIDEuMDE1NjE3XG5tYXJpdGwgICAgICAgICAgICAgICAxLjI4MjIyNSAgNCAgICAgICAgMS4wMzE1NjJcbmpvYmNsYXNzICAgICAgICAgICAgIDEuMTExOTA5ICAxICAgICAgICAxLjA1NDQ3MVxuIn0= -->
+<pre><code>                         GVIF Df GVIF^(1/(2*Df))
+lo(year, span = 0.7) 1.005083  1        1.002538
+s(age, df = 5)       1.276489  1        1.129818
+education            1.131984  4        1.015617
+maritl               1.282225  4        1.031562
+jobclass             1.111909  1        1.054471</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGFyKG1mcm93ID0gYygyLCAzKSlcbiNwbG90IHRoZSBiZXN0IGZpdFxucGxvdChnYW0ubTQsIHNlID0gVCwgY29sID0gXCJibHVlXCIpXG5gYGAifQ== -->
+<pre class="r"><code>par(mfrow = c(2, 3))
+#plot the best fit
+plot(gam.m4, se = T, col = &quot;blue&quot;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-plot-begin eyJjb25kaXRpb25zIjpbXSwiaGVpZ2h0Ijo0MzIuNjMyOSwic2l6ZV9iZWhhdmlvciI6MCwid2lkdGgiOjcwMH0= -->
+<p><img src="data:image/png;base64,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" /></p>
+<!-- rnb-plot-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIldhZ2Ugb3RoZXIgUHJlZGljdG9ycyBQcm9ibGVtIg0Kb3V0cHV0OiBodG1sX25vdGVib29rDQotLS0NCg0KVGhpcyBpcyBQcm9ibGVtIDcgRm9yIElTTFIncyBDaGFwdGVyIDcgQXBwbGllZCBTZWN0aW9uDQoiVGhlIFdhZ2UgZGF0YSBzZXQgY29udGFpbnMgYSBudW1iZXIgb2Ygb3RoZXIgZmVhdHVyZXMgbm90IGV4cGxvcmVkDQppbiB0aGlzIGNoYXB0ZXIsIHN1Y2ggYXMgbWFyaXRhbCBzdGF0dXMgKG1hcml0bCksIGpvYiBjbGFzcyAoam9iY2xhc3MpLA0KYW5kIG90aGVycy4gRXhwbG9yZSB0aGUgcmVsYXRpb25zaGlwcyBiZXR3ZWVuIHNvbWUgb2YgdGhlc2Ugb3RoZXINCnByZWRpY3RvcnMgYW5kIHdhZ2UsIGFuZCB1c2Ugbm9uLWxpbmVhciBmaXR0aW5nIHRlY2huaXF1ZXMgaW4gb3JkZXIgdG8NCmZpdCBmbGV4aWJsZSBtb2RlbHMgdG8gdGhlIGRhdGEuIENyZWF0ZSBwbG90cyBvZiB0aGUgcmVzdWx0cyBvYnRhaW5lZCwNCmFuZCB3cml0ZSBhIHN1bW1hcnkgb2YgeW91ciBmaW5kaW5ncy4iDQoNCldlJ2xsIGJlZ2luIGJ5IGdldHRpbmcgdXNpbmcgYWxsIG9mIHRoZSB2YXJpYWJsZXMgdG8gcHJlZGljdCB3YWdlLg0KV2UnbGwgZG8gYSBtdWx0aXZhcmlhYmxlIGxpbmVhciByZWdyZXNzaW9uIHRvIHN0YXJ0IGFzIHdlbGwgYXMgYSBzY2F0dGVycGxvdCBtYXRyaXguIHdlJ2xsIHRoZW4gZXhhbWluZSB0aGUgcC12YWx1ZXMgZnJvbSB0aGUgbXVsdGl2YXJpYWJsZSByZWdyZXNzaW9uIGZpdCwgYW5kIHRha2UgdGhvc2UgdmFyaWFibGVzIGFuZCBhcHBseSBub25saW5lYXIgcmVncmVzc2lvbiB0ZWNobmlxdWVzIG9uIHRoZW0uDQoNCldlJ2xsIG1haW5seSBiZSB1c2luZyBjcm9zcy12YWxpZGF0aW9uIHRvIGRldGVybWluZSB3aGljaCBwcmVkaWN0b3JzIHdlIHNob3VsZCBhZGQgYW5kIG5vdCBhZGQuIA0KDQpgYGB7cn0NCmxpYnJhcnkoSVNMUikNCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShib290KQ0KDQphdHRhY2goV2FnZSkNCm5hbWVzKFdhZ2UpDQoNCmdncGxvdChkYXRhID0gV2FnZSkgKyANCiAgZ2VvbV9wb2ludChtYXBwaW5nID0gYWVzKHg9eWVhcix5PXdhZ2UpKQ0KZ2dwbG90KGRhdGEgPSBXYWdlKSArIA0KICBnZW9tX3BvaW50KG1hcHBpbmcgPSBhZXMoeD1tYXJpdGwseT13YWdlKSkNCmdncGxvdChkYXRhID0gV2FnZSkgKyANCiAgZ2VvbV9wb2ludChtYXBwaW5nID0gYWVzKHg9am9iY2xhc3MseT13YWdlKSkNCmRldGFjaChXYWdlKQ0KYGBgDQoNCg==</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIldhZ2Ugb3RoZXIgUHJlZGljdG9ycyBQcm9ibGVtIg0Kb3V0cHV0OiBodG1sX25vdGVib29rDQotLS0NCg0KVGhpcyBpcyBQcm9ibGVtIDcgRm9yIElTTFIncyBDaGFwdGVyIDcgQXBwbGllZCBTZWN0aW9uDQoiVGhlIFdhZ2UgZGF0YSBzZXQgY29udGFpbnMgYSBudW1iZXIgb2Ygb3RoZXIgZmVhdHVyZXMgbm90IGV4cGxvcmVkDQppbiB0aGlzIGNoYXB0ZXIsIHN1Y2ggYXMgbWFyaXRhbCBzdGF0dXMgKG1hcml0bCksIGpvYiBjbGFzcyAoam9iY2xhc3MpLA0KYW5kIG90aGVycy4gRXhwbG9yZSB0aGUgcmVsYXRpb25zaGlwcyBiZXR3ZWVuIHNvbWUgb2YgdGhlc2Ugb3RoZXINCnByZWRpY3RvcnMgYW5kIHdhZ2UsIGFuZCB1c2Ugbm9uLWxpbmVhciBmaXR0aW5nIHRlY2huaXF1ZXMgaW4gb3JkZXIgdG8NCmZpdCBmbGV4aWJsZSBtb2RlbHMgdG8gdGhlIGRhdGEuIENyZWF0ZSBwbG90cyBvZiB0aGUgcmVzdWx0cyBvYnRhaW5lZCwNCmFuZCB3cml0ZSBhIHN1bW1hcnkgb2YgeW91ciBmaW5kaW5ncy4iDQoNCg0KV2UgYmVnaW4gYnkgcGxvdHRpbmcgb3V0IGFnZSBhbmQgd2FnZSwgYW5kIHRoZW4gY29sb3JpbmcgaW4gdGhlIHBvaW50cyBiYXNlZCBvZmYgb2YgdGhlaXIgbWFyaXRhbCBzdGF0dXMgYW5kIGpvYiBjbGFzcw0KQmFzZWQgb2ZmIHRoZSBkYXRhLCB0aGVyZSBpcyBhIGxhcmdlIGNsdXN0ZXIgb2YgbWFycmllZCBwZW9wbGUgaW4gdGhlIGluZm9ybWF0aW9uIGpvYmNsYXNzLCBtZWFuaW5nIHRoYXQgdGhpcyBjb3VsZCBwb3RlbnRpYWxseSB5aWVsZA0KYGBge3J9DQpsaWJyYXJ5KElTTFIpDQpsaWJyYXJ5KHRpZHl2ZXJzZSkNCmxpYnJhcnkoYm9vdCkNCnNldC5zZWVkKDEpDQpuYW1lcyhXYWdlKQ0KDQpnZ3Bsb3QoZGF0YSA9IFdhZ2UpICsgDQogIGdlb21fcG9pbnQobWFwcGluZyA9IGFlcyh4PWFnZSx5PXdhZ2UsIGNvbCA9IG1hcml0bCkpDQpnZ3Bsb3QoZGF0YSA9IFdhZ2UpICsgDQogIGdlb21fcG9pbnQobWFwcGluZyA9IGFlcyh4PWFnZSx5PXdhZ2UsIGNvbCA9IGpvYmNsYXNzKSkNCnN1bW1hcnkoV2FnZSRtYXJpdGwpDQpzdW1tYXJ5KFdhZ2Ukam9iY2xhc3MpDQoNCg0KYGBgDQpXZSdsbCBiZSB1c2luZyBhbmFseXNpcyBvZiB2YXJpYW5jZSB0byBzZWUgd2hpY2ggZmVhdHVyZXMgdG8gYWRkIGFuZCB3aGljaCBub3QgdG8gYWRkDQpCeSBhbmFseXppbmcgdGhlIHAtdmFsdWVzLCBjb21iaW5lZCB3aXRoIHRoZSBhbmFseXNpcyBvZiB2YXJpYW5jZSBmb3IgdGhlIGZvdXJ0aCBwcmVkaWN0b3JzLCB3ZSBzZWUgdGhhdCBpbmNsdWRpbmcgdGhlIG1hcml0YWwgc3RhdHVzIGFuZCB0aGUgYW5kIGpvYmNsYXNzIGFyZSBnb29kIHByZWRpY3RvcnMgZm9yIHRoZSB3YWdlIG9mIGEgZ2l2ZW4gaW5kaXZpZHVhbCwgYW5kIHRocm91Z2ggb3VyIGFuYWx5c2lzIG9mIHZhcmlhbmNlLCB3ZSBzZWUgdGhlIGZvdXJ0aCBtb2RlbCwgdGhlIG1vZGVsIHdpdGggYm90aCBvZiB0aG9zZSBwcmVkaWN0b3JzIGluY2x1ZGVkLCBkaWQgYmV0dGVyIHRoYW4gdGhlIG9yaWdpbmFsIG1vZGVsIHdpdGhvdXQgdGhlIHByZWRpY3RvcnMuDQoNCmBgYHtyfQ0KbGlicmFyeShnYW0pDQpsaWJyYXJ5KHNwbGluZXMpDQpsaWJyYXJ5KGNhcikNCmdhbS5tMSA9IGdhbSh3YWdlIH4gbG8oeWVhciwgc3BhbiA9IC43KSArIHMoYWdlLCBkZiA9IDUpICsgZWR1Y2F0aW9uLCBkYXRhID0gV2FnZSkNCmdhbS5tMiA9IGdhbSh3YWdlIH4gbG8oeWVhciwgc3BhbiA9IC43KSArIHMoYWdlLGRmPTUpICsgZWR1Y2F0aW9uICtqb2JjbGFzcywgZGF0YSA9IFdhZ2UpDQpnYW0ubTMgPSBnYW0od2FnZSB+IGxvKHllYXIsIHNwYW4gPSAuNykgKyBzKGFnZSxkZj01KSArIGVkdWNhdGlvbiArbWFyaXRsLCBkYXRhID0gV2FnZSkNCmdhbS5tNCA9IGdhbSh3YWdlIH4gbG8oeWVhciwgc3BhbiA9IC43KSArIHMoYWdlLGRmPTUpICsgZWR1Y2F0aW9uICttYXJpdGwgKyBqb2JjbGFzcywgZGF0YSA9IFdhZ2UpDQphbm92YShnYW0ubTEsZ2FtLm0yLGdhbS5tMyxnYW0ubTQpDQpzdW1tYXJ5KGdhbS5tNCkNCnZpZihnYW0ubTQpDQpwYXIobWZyb3cgPSBjKDIsIDMpKQ0KDQojcGxvdCB0aGUgYmVzdCBmaXQNCnBsb3QoZ2FtLm00LCBzZSA9IFQsIGNvbCA9ICJibHVlIikNCmBgYA0KDQo=</div>
 
 
 
