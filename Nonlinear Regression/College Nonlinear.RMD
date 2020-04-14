@@ -1,0 +1,45 @@
+---
+title: "College Nonlinear Problem"
+output: html_notebook
+---
+This is Problem 10 from ISLR's Chapter 7 Applied Section
+
+```{r}
+library(ISLR)
+library(tidyverse)
+library(boot)
+library(splines)
+library(gam)
+library(leaps)
+set.seed(1)
+# Part A - Split Data into Training/Test Set, and then perform forward subset selection to get a subset of predictors
+train = sample(1:dim(College)[1],dim(College)[1]/2)
+test = -train
+
+regfwd = regsubsets(Outstate~.,data = College[train,], nvmax= 18)
+summary(regfwd)
+coef(regfwd, id =6)
+```
+Part B - Fit a GAM on the training data, using out-of-state tuition as
+the response and the features selected in the previous step as
+the predictors. Plot the results, and explain your findings.
+
+Based off the graphs below, Expend seems very nonlinear with Out-of-State tuition, while Grad.rate looks nonlinear as well, just less so
+```{r}
+# GAM Model is fit onto the 6 predictors, with the quantitative predictors given 5 degrees of freedom
+gam.model = gam(Outstate~Private+s(Room.Board,5)+s(Terminal,5)+s(perc.alumni,5)+s(Expend,5)+s(Grad.Rate,5), data = College, subset= train)
+par(mfrow = c(2,3))
+plot(gam.model, se = TRUE, col = "blue")
+
+
+# Part C - Evaluation of the GAM model on the test set, R^2 is outputted
+# 77% of the variation of Out of State tuition costs is accounted for by the various predictors in this GAM model
+preds = predict(gam.model, newdata = College[test,])
+RSS = sum((College[test,]$Outstate - preds)^2)
+TSS = sum((College[test,]$Outstate - mean(College[test,]$Outstate))^2)
+print(1 - (RSS/TSS))
+
+# Part D
+summary(gam.model)
+```
+Looking at the analysis of variance in the parameters, the Expend parameter has a very strong nonlinear relation, room/board also has a strong nonlinear relationship, while graduation has a moderate nonlinear relationship. Percent.alumni and terminal are weaker nonlinear predictors. Regardless, the analysis of all predictors appear to have a strong effect on the prediction of out of state tuition, as indicated by the p-values of the parametric effects anova
