@@ -1,0 +1,74 @@
+---
+title: "Boston Nonlinear Dataset"
+output: html_notebook
+---
+
+This is Problem 8 of ISLR's Chapter 7 Applied Section
+
+This question uses the variables dis (the weighted mean of distances
+to five Boston employment centers) and nox (nitrogen oxides concentration in parts per 10 million) from the Boston data. We will treat
+dis as the predictor and nox as the response.
+
+Very low p-values for all the degrees of the polynomial that our cubic fit is a good fit, but we might need to increase the flexibility of our model
+
+By evaluating the polynomial RSS, we see that things start to level off after third degree
+```{r}
+library(tidyverse)
+library(ISLR)
+library(MASS)
+
+#Part A: Fit a cubic polynomial to predict nox from dis
+model = glm(nox~poly(dis,3), data = Boston)
+summary(model)
+
+dis.grid = seq(min(Boston$dis),max(Boston$dis), by = .1)
+preds = predict(model,list(dis = dis.grid))
+
+plot(nox~dis, data = Boston, col = "darkgrey")
+lines(dis.grid,preds,lwd = 2, col = "red")
+
+#Part B: Determining the best degree polynomial based off of the residuals
+RSS = rep(NA,10)
+for (i in 1:10) {
+  model = glm(nox~poly(dis,i), data = Boston)
+  RSS[i] = mean((model$residuals)^2)
+}
+ggplot() + 
+  geom_smooth(mapping = aes(x = 1:10,y = RSS))
+
+```
+
+Now, cross-validation is performed on each of these polynomials, and the test MSE is plotted
+After the third and forth degree, the test MSE begins to increase  
+
+When using regression splines, using LOOCV, we see that the RSS starts to level off after 6 degrees of freedom, but the test MSE is lowest at 10 degrees of freedom, but the at df =5 or 8, the results were similar
+
+```{r}
+# Part C
+library(boot)
+MSE = rep(NA,10)
+for (i in 1:10) {
+  model = glm(nox~poly(dis,i),data = Boston)
+  MSE[i] = cv.glm(Boston,model,K=10)$delta[1]
+}
+ggplot() +
+  geom_bar(mapping = aes(x = 1:10, y = MSE), stat = "identity")
+library(splines)
+#Part D, E, and F
+MSE = c()
+RSS = c()
+for (i in 3:20)
+{
+  
+  model = glm(nox~bs(dis, df = i), data = Boston)
+  RSS = c(RSS,mean((model$residuals)^2))
+  
+  # Use K-Fold CV for quicker results
+  MSE = c(MSE, cv.glm(Boston,model)$delta[1])
+}
+
+plot(3:20,MSE, type = "b", xlab = "df", ylab = "mse")
+
+plot(3:20,RSS, type = "l", xlab = "df", ylab = "rss")
+
+```
