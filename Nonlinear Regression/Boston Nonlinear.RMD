@@ -11,7 +11,7 @@ dis as the predictor and nox as the response.
 
 Very low p-values for all the degrees of the polynomial that our cubic fit is a good fit, but we might need to increase the flexibility of our model
 
-By evaluating the polynomial RSS, we see that things start to level off after third degree
+By evaluating the polynomial RSS, we see that things start to level off after third degree.
 ```{r}
 library(tidyverse)
 library(ISLR)
