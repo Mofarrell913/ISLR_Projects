@@ -1,0 +1,86 @@
+---
+title: "Carseats Regression Tree"
+output: html_notebook
+---
+
+This is problem 8 of ISLR's Chapter 8 Applied Section
+"we will seek to predict Sales using regression trees and related approaches, treating the response as a quantitative variable."
+
+
+```{r}
+library(tree)
+library(tidyverse)
+library(ISLR)
+library(randomForest)
+
+#Part A - split data into training & test set
+set.seed(1)
+train = sample(1:nrow(Carseats), nrow(Carseats)/2)
+test = -train
+
+# Part B
+# build single decision tree to predict Sales, and plot the decision tree
+tree.carseats = tree(Sales~., data = Carseats,subset = train)
+summary(tree.carseats)
+plot(tree.carseats)
+text(tree.carseats,pretty = 0)
+
+# Make predictions and output MSE -> 4.15
+Carseats.test = Carseats[-train,]
+Sales.test = Carseats$Sales[-train]
+yhat = predict(tree.carseats, Carseats[-train,])
+mean((yhat-Carseats[-train,'Sales'])^2)
+
+# Part C
+# Use CV to find the optimal level of tree complexity
+cv.carseats = cv.tree(tree.carseats)
+cv.carseats
+plot(cv.carseats)
+
+prune.carseats = prune.tree(tree.carseats, best = 9)
+plot(prune.carseats)
+text(prune.carseats)
+
+yhat = predict(prune.carseats, Carseats[-train,])
+mean((yhat-Carseats[-train,'Sales'])^2)
+plot(tree.pred,Carseats[-train,'Sales'],xlab='prediction',ylab='actual')
+abline(0,1)
+```
+
+Below we'll use the bagging approach to analyze the data
+```{r}
+# Part D - Implement Bagging Approach
+bag.carseats = randomForest(Sales~., data = Carseats, subset = train, mtry = ncol(Carseats)-1, importance = TRUE, ntree = 100)
+importance(bag.carseats)
+varImpPlot(bag.carseats)
+
+# Predict Using Bagging Approach
+yhat = predict(bag.carseats,Carseats[-train,])
+
+mean((yhat - Carseats[-train,'Sales'])^2)
+plot(bag.carseats)
+
+# Part E - Implement Random Forest Regression Approach
+rf.carseats = randomForest(Sales~., data = Carseats, subset = train, mtry = 9, importance = TRUE, ntree = 100)
+importance(rf.carseats)
+varImpPlot(rf.carseats)
+
+# Predict Using RF Approach
+yhat = predict(rf.carseats, Carseats[-train,])
+mean((yhat - Carseats[-train,'Sales'])^2)
+plot(rf.carseats)
+
+```
+
+
+Determining Subset size m for the random forest regression approach
+```{r}
+errors = c()
+for (i in 3:10) {
+  carseats.rf = randomForest(Sales~.,data = Carseats, subset = train, mtry = i, importance = TRUE, ntree = 100)
+  predictions = predict(carseats.rf, Carseats[-train,])
+  errors = c(errors, mean((predictions-Carseats$Sales[-train])^2))
+}
+plot(3:10, errors, type = 'b')
+```
+
