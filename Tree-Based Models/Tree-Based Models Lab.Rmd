@@ -1,0 +1,95 @@
+---
+title: "ISLR Tree Lab"
+output: html_notebook
+---
+
+This is the tree-based models lab from ISLR's chapter 8
+
+First, we'll use trees to analyze the Carseats dataset from the ISLR library. We'll split sales, a continuous variable, into high and low sales volumes.
+
+9% is the training error rate of the decision tree.  A small deviance indicates a tree that provides
+a good fit to the (training) data. The residual mean deviance reported is
+simply the deviance divided by n−|T0|, which in this case is 400−27 = 373.
+```{r}
+library(tree)
+library(ISLR)
+library(tidyverse)
+High = ifelse(Carseats$Sales<=8,"No","Yes")
+Carseats = as_tibble(data.frame(Carseats, High))
+
+#Tree Syntax is similar to that of lm() function
+tree.carseats = tree(High~.-Sales, data = Carseats)
+summary(tree.carseats)
+
+# The argument pretty=0 instructs R to include the category names 
+# for any qualitative predictors, rather than simply displaying a
+# letter for each category. text() gives node labels
+plot(tree.carseats)
+text(tree.carseats,pretty = 0)
+```
+
+
+Now, we approximae the test error of the tree
+```{r}
+set.seed(2)
+train = sample(1:nrow(Carseats),200)
+Carseats.test = Carseats[-train,]
+High.test = High[-train]
+tree.carseats = tree(High~.-Sales,Carseats,subset = train)
+tree.pred = predict(tree.carseats, Carseats.test,type="class")
+table(tree.pred,High.test)
+print((86+57)/200)
+
+```
+
+cv.tree() performs cross-validation to determine the optimal level of tree complexity 
+dev corresponds to cv error rate 
+```{r}
+set.seed(3)
+cv.carseats = cv.tree(tree.carseats, FUN = prune.misclass)
+names(cv.carseats)
+cv.carseats
+par(mfrow = c(1,2))
+plot(cv.carseats$size,cv.carseats$dev,type = "b")
+plot(cv.carseats$k,cv.carseats$dev, type = "b")
+
+#prune.miscalss() punrs the tree to obtain the nine node tree, which has the lowest CV error
+prune.carseats = prune.misclass(tree.carseats,best = 9)
+plot(prune.carseats)
+text(prune.carseats,pretty = 0)
+
+#We then apply the predict function for the test set error
+tree.pred = predict(prune.carseats,Carseats.test, type = "class")
+table(tree.pred,High.test)
+```
+
+Next, we fit a regression tree to the boston data set
+In this case, the most complex tree is selected by cross-validation, but if we wanted to prune tree, we could, which is why we're going to
+```{r}
+library(MASS)
+set.seed(1)
+train = sample(1:nrow(Boston), nrow(Boston)/2)
+tree.boston = tree(medv~.,Boston,subset = train)
+summary(tree.boston)
+plot(tree.boston)
+text(tree.boston, pretty = 0)
+
+# The tree indicates that lower values of lstat correspond to more expensive houses. The tree predicts a median house price of $46, 400 for larger homes in suburbs in which residents have high socioeconomic status
+
+# Performing cv on the tree
+cv.boston = cv.tree(tree.boston)
+plot(cv.boston$size,cv.boston$dev,type = 'b')
+
+#Pruning tree cause why not
+prune.boston = prune.tree(tree.boston,best = 5)
+plot(prune.boston)
+text(prune.boston, pretty = 0)
+
+# Predicting results with unpruned tree
+yhat = predict(tree.boston, newdata = Boston[-train,])
+boston.test = Boston[-train, "medv"]
+plot(yhat,boston.test)
+abline(0,1)
+mean((yhat-boston.test)^2)
+```
+
