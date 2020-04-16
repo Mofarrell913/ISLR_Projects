@@ -93,3 +93,72 @@ abline(0,1)
 mean((yhat-boston.test)^2)
 ```
 
+Now we apply bagging and random forests to the Boston data, using randomForest package in R. recall that bagging in random forest when m = p
+mtry argument is pretty much m, the subset of predictors
+bagged model halves the testMSE that the optimally-pruned single tree had
+```{r}
+library(randomForest)
+set.seed(1)
+
+# Build Bagging model
+bag.boston = randomForest(medv~.,data = Boston, subset = train, mtry = 13, importance = TRUE)
+bag.boston
+
+#Predict values using the bagging model
+yhat.bag = predict(bag.boston,newdata = Boston[-train,])
+plot(yhat.bag, boston.test)
+abline(0,1)
+mean((yhat.bag-boston.test)^2)
+
+# changing the number of trees used in the model
+bag.boston = randomForest(medv~.,data = Boston, subset = train, mtry = 13, ntree = 25)
+yhat.bag = predict(bag.boston,newdata = Boston[-train,])
+mean((yhat.bag-boston.test)^2)
+
+```
+
+In growing a random forest, we use a smaller value in the mtry , randomForest does p/3 variables for regression trees, and sqrt(p) variables for classification trees
+
+For the importance measurements,  The former is based
+upon the mean decrease of accuracy in predictions on the out of bag samples when a given variable is excluded from the model. The latter is a measure of the total decrease in node impurity that results from splits over that variable, averaged over all trees 
+```{r}
+set.seed(1)
+
+# build random forest classifier
+rf.boston = randomForest(medv~.,data = Boston, subset = train,
+                         mtry = 6, importance  = TRUE)
+yhat.rf = predict(rf.boston, newdata = Boston[-train,])
+mean((yhat.rf-boston.test)^2)
+
+#outputting importance of each variable
+importance(rf.boston)
+varImpPlot(rf.boston)
+```
+
+Using the gbm package, we can fit booston regression trees to the boston daaset
+if regression, do distribution = "gaussian"
+if classification, do distribution = "bernoulli"
+
+The argument n.trees=5000 indicates that we want 5000 trees, and the option interaction.depth=4 limits the depth of each tree.
+
+We can produce partial dependence plots for lstate and rm, which show the marginal effect of the selected variables on the response after integrating out the other variables
+default shrinkage value is .001
+```{r}
+library(gbm)
+set.seed(1)
+boost.boston = gbm(medv~.,data = Boston[train,], distribution = "gaussian", n.trees = 5000, interaction.depth = 4, shrinkage = .2, verbose = F)
+
+# lstat and rel.inf are by far our most useful predictors
+summary(boost.boston)
+
+# construct partial dependence plots 
+par(mfrow = c(1,2))
+plot(boost.boston,i = "rm")
+plot(boost.boston, i ="lstat")
+
+#predicting medv using the boosted model
+# Test MSE comparable to that of RF model, and better than bagging model
+yhat.boost = predict(boost.boston,newdata = Boston[-train,], n.trees = 5000)
+mean((yhat.boost-boston.test)^2)
+```
+
