@@ -157,7 +157,7 @@ plot(boost.boston,i = "rm")
 plot(boost.boston, i ="lstat")
 
 #predicting medv using the boosted model
-# Test MSE comparable to that of RF model, and better than bagging model
+# Test MSE comparable to that of RF model, and better than bagging model.
 yhat.boost = predict(boost.boston,newdata = Boston[-train,], n.trees = 5000)
 mean((yhat.boost-boston.test)^2)
 ```
