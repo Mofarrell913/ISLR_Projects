@@ -1,0 +1,55 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is ISLR's Problem 9 of Chapter 8 Applied Section
+
+This problem involves the OJ data set which is part of the ISLR
+package
+
+```{r}
+library(ISLR)
+library(tidyverse)
+library(tree)
+library(randomForest)
+library(caret)
+set.seed(1)
+
+#Part A - Creating a training set with 800 observations
+#train = createDataPartition(y=OJ$Purchase,p=.7,list = FALSE,times = 1)
+train = sample(1:nrow(OJ), 800)
+test = -train
+
+# Part B, C, D - Fitting a tree to the training data
+# Training error rate of 16.5% wih 8 terminal nodes
+# if Customer brand loyalty for Cirtrus is higher than .482, than they're more likely to pick up citrus 
+tree.oj = tree(Purchase~., data = OJ[train,])
+summary(tree.oj)
+plot(tree.oj)
+text(tree.oj)
+
+# Part E - predict using the tree, and we get a test error rate of 81%
+oj.pred = predict(tree.oj, OJ[test,], type = "class")
+table(oj.pred,OJ$Purchase[test])
+
+#Part F and G - use CV to determine optimal tree size
+#Part H - tree of size 5 has the best results
+cv.oj = cv.tree(tree.oj, FUN = prune.misclass, K = 10)
+cv.oj
+plot(cv.oj)
+
+#Part I - Construct a prune tree of optimal size
+prune.tree = prune.tree(tree.oj, best = 2)
+plot(prune.tree)
+text(prune.tree)
+
+#Part J and K: Comparing Training and Test Error Rates
+# Training error rate is higher than it's fully grown counterpart
+# The pruned tree, while having a higher misclassification rate, is much more interpretable
+summary(prune.tree)
+oj.pruned.pred = predict(prune.tree, OJ[test,], type = "class")
+table(oj.pruned.pred,OJ$Purchase[test])
+```
+
+
