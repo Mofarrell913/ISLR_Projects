@@ -1,0 +1,35 @@
+---
+title: "Caravan Trees"
+output: html_notebook
+---
+This is Problem 11 from ISLR's Chapter 8 Applied Section
+
+```{r}
+library(ISLR)
+library(tidyverse)
+library(tree)
+library(gbm)
+library(randomForest)
+set.seed(1)
+# Part A - Create a training set of 1000 observations, and make the rest the test set
+train = 1:1000
+test = -train
+Caravan$Purchase = ifelse(Caravan$Purchase == "Yes", 1, 0)
+
+# Part B - Fit a boosting model to the training set with Purchase as the response and the other variables as predictors.
+# PPERSAUT, MKOOPKLA, MOPLHOOG, MBERMIDD, and PBRAND seem to have the most influence
+boost.caravan = gbm(Purchase~., data = Caravan[train,], distribution = "bernoulli", n.trees = 1000, shrinkage = .01, verbose = F)
+summary(boost.caravan)
+
+# Part C - Predict with the Boosted Model, and have the threshold value be .2
+# The boosting approach does a much better job at classifying than the logistic regression model
+probs = predict(boost.caravan, Caravan[test,],n.trees = 1000, type = "response")
+preds = ifelse(probs > .2, 1, 0)
+table(preds, Caravan$Purchase[test])
+
+logistic = glm(Purchase~.,data = Caravan[train,],family = "binomial")
+probs2 = predict(logistic, Caravan[test,],type = "response")
+preds2 = ifelse(probs2>.2,1,0)
+table(preds2, Caravan$Purchase[test])
+```
+
