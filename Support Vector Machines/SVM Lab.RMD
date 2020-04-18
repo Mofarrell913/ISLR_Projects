@@ -149,6 +149,7 @@ If the response is a factor containing more than two levels, svm() will do one-v
 ```{r}
 # Generate 3 classes of observations
 set.seed(1)
+
 x = rbind(x,matrix(rnorm(50*2),ncol=2))
 y = c(y,rep(0,50))
 x[y==0,2]= x[y==0 ,2]+2
