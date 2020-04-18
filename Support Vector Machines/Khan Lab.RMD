@@ -1,0 +1,37 @@
+---
+title: "Gene Expression Lab"
+output: html_notebook
+---
+
+This is the last section of ISLR's Chapter 9 Lab
+"We now examine the Khan data set, which consists of a number of tissue samples corresponding to four distinct types of small round blue cell tumors. For each tissue sample, gene expression measurements are available. The data set consists of training data, xtrain and ytrain, and testing data, xtest and ytest."
+
+```{r}
+library(ISLR)
+names(Khan)
+dim(Khan$xtrain)
+dim(Khan$xtest)
+length(Khan$ytrain)
+length(Khan$ytest)
+table(Khan$ytrain)
+table(Khan$ytest)
+```
+
+Large number of features relative to the number of observations
+Linear Kernel is most likely sufficient
+
+No training errors -> large number of features relative to number of observations implies it's easy to find hyperplanes
+```{r}
+
+# Fit SVM model with linear kernel
+dat = data.frame(x = Khan$xtrain, y = as.factor(Khan$ytrain))
+out = svm(y~.,data = dat, kernel = "linear", cost = 10)
+summary(out)
+table(out$fitted,dat$y)
+
+# predict test data with SVM -> Two errors are made
+dat.te = data.frame(x = Khan$xtest, y= as.factor(Khan$ytest))
+pred.te = predict(out,newdata = dat.te)
+table(pred.te,dat.te$y)
+```
+
