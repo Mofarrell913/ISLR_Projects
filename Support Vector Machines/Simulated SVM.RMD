@@ -1,0 +1,59 @@
+---
+title: "Simulated SVM"
+output: html_notebook
+---
+This is ISLR's Chapter 9 Applied section problem 4
+
+```{r}
+library(ISLR)
+library(tidyverse)
+library(e1071)
+set.seed(2)
+
+# Generate a 2D Plot with a nonlnear decision boundary
+X = tibble(X1 = abs(rnorm(150,1.5,1.2)), X2 = abs(rnorm(150,1.5,1) + .2))
+Y = ifelse(2/3 * (X[,1]-2)^2-X[,1]-X[,2]+3 > 0, 'red', 'blue')
+
+# Separate the points in a nonlinear fashion
+data = tibble(X,class = as.factor(Y))
+data[data$class == 'blue',][,2] = data[data$class == 'blue',][,2] + 1
+data[data$class == 'red',][,2] = data[data$class == 'red',][,2] 
+X = data[,c(1,2)]
+
+# Plot out the points, and generate a sample
+plot(X, xlab = 'X1', ylab = 'X2',col = Y)
+train = sample(1:nrow(data),nrow(data)*.7)
+test = -train
+
+# Generate a linear kernel
+svm.linear = svm(class~., data = data[train,], kernel = "linear",cost = .01, scale = FALSE)
+svm.linear.tune = tune(svm, class~., data = data[train,],kernel = "linear", ranges = list(cost = c(.0001,.001,.01,.1,1,10)))
+summary(svm.linear.tune)
+bestmod = svm.linear.tune$best.model
+plot(bestmod,data)
+
+# Predict Using a linear Kernel
+linear.pred = predict(bestmod,newdata = data[test,], type = "response")
+table(Y[test], linear.pred)
+
+# Generate a polynomial kernel
+svm.poly = svm(class~., data = data[train,], kernel = "polynomial", cost = .01, scale = FALSE)
+svm.poly.tune = tune(svm, class~., data = data[train,],kernel = "polynomial",degree = 2, gamma = 3, ranges=list(cost=c(.001,.01,.1,1,10)) )
+summary(svm.poly.tune)
+plot(svm.poly.tune$best.model, data)
+
+# Predict using the polynomial kernel
+poly.pred = predict(svm.poly.tune$best.model,newdata = data[test,],type = "response")
+table(Y[test],poly.pred)
+
+# generate a radial kernel
+svm.radial.tune = tune(svm, class~., data = data[train,], kernel = "radial", gamma = 1, ranges = list(cost=c(.001,.01,.1,1,10)))
+plot(svm.radial.tune$best.model, data)
+
+# Predict using the radial kernel
+rad.pred = predict(svm.radial.tune$best.model,newdata = data[test,],type = "response")
+table(Y[test],rad.pred)
+
+
+```
+
