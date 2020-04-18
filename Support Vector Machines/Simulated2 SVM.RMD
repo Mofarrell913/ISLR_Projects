@@ -1,0 +1,51 @@
+---
+title: "Nonlinear Decision Boundaries"
+output: html_notebook
+---
+
+This is problem 5 of ISLR's Chapter 9 Applied Section
+"We have seen that we can fit an SVM with a non-linear kernel in order
+to perform classification using a non-linear decision boundary. We will
+now see that we can also obtain a non-linear decision boundary by
+performing logistic regression using non-linear transformations of the
+features."
+
+
+```{r}
+library(ISLR)
+library(tidyverse)
+library(e1071)
+
+# Part A and B - generate a data with n = 500 and p = 2, and the observations belong to two classes with a quadratic decision boundary
+set.seed(1)
+x1 = runif(500)-.5
+x2 = runif(500)-.5
+y = 1*(x1^2-x2^2>0)
+plot(x1,x2, col = ifelse(y, 'red','blue'), main = "original dataset")
+
+# Part C - Logistic regression model is fit, using x1 and x2 as predictors on the training data
+train = sample(1:500,500*.7)
+test = -train
+
+# Part D - Predict on the training set, and plot the predicted class labels
+data = tibble(x1=x1,x2=x2,y=y)
+logistic = glm(y~., data = data, family = "binomial")
+log.pred = predict(logistic, type = "response")
+plot(x1,x2, col = ifelse(log.pred >= .5,'red','blue'), main = "Logistic Regression")
+
+# Part E - Fit a nonlinear logistic regression model, and predict on the training points
+nonlinlog = glm(y~poly(x1,2)+poly(x2,2), data = data, family = "binomial")
+nonlin.pred = predict(nonlinlog, type = "response")
+plot(x1,x2,col = ifelse(nonlin.pred >= .5,'red','blue'), main = "Nonlinear Logistic Regression")
+
+# Part G - Fit a SVC and predict on training points
+# Classifies all points to a single class
+svm.fit=svm(as.factor(y)~.,data=data.frame(x1,x2,y=as.factor(y)),kernel='linear', cost = .1)
+svm.pred = predict(svm.fit, data.frame(x1,x2), type = "response")
+plot(x1,x2,col = ifelse(svm.pred != 0,'red','blue'), main = "Support Vector Classifier")
+
+# Part F _ Fit a nonlinear kernel SVM and predict on training points
+svm.model = svm(as.factor(y)~.,data = data, cost = 1000)
+vm.model = predict(svm.model, data, type = "response")
+plot(x1,x2,col = ifelse(vm.model != 0,'red','blue'), main = "SVM")
+```
