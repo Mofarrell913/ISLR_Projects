@@ -1,0 +1,81 @@
+---
+title: "OJ SVM"
+output: html_notebook
+---
+
+
+This is Problem 8 of ISLR's Chapter 9 Applied Section
+"This problem involves the OJ data set which is part of the ISLR
+package."
+```{r}
+library(ISLR)
+library(tidyverse)
+library(e1071)
+
+# Part A and B - create a training/test split, and fit a SVC using cost=.01 to predict purchase
+# The Support Vector Classifier has 432 support vectors, indicating its variance may be pretty low
+set.seed(1)
+train = sample(1:nrow(OJ), 800)
+test = -train
+svm.model = svm(Purchase~., data = OJ[train,], kernel = "linear", cost = .01)
+summary(svm.model)
+
+# Part C - Find training and test error rates, which are 16.6% and 18.1% respectively
+svm.train = predict(svm.model, OJ[train,])
+confusion = table(actual = OJ[train,"Purchase"], svm.train)
+print(confusion)
+print(1- (confusion[2,2] + confusion[1,1]) / (nrow(OJ[train,])))
+
+svm.test = predict(svm.model, OJ[test,])
+confusion = table(actual = OJ[test,"Purchase"], svm.test)
+print(confusion)
+print(1- (confusion[2,2] + confusion[1,1]) / (nrow(OJ[test,])))
+
+# Part D - Finding optimal cost, which is .3
+tune.out = tune(svm, Purchase~., data = OJ[train,],kernel = "linear", ranges = list(cost = c(.01,.03,.1,.3,1,3,10)))
+summary(tune.out)
+
+# Part E - Getting training and test errors,, which are 16.1% and 18.1% respectively.
+tune.pred = predict(tune.out$best.model, OJ[train,])
+confusion = table(actual = OJ[train,"Purchase"], tune.pred)
+print(confusion)
+print(1- (confusion[2,2] + confusion[1,1]) / (nrow(OJ[train,])))
+
+tune.pred = predict(tune.out$best.model, OJ[test,])
+confusion = table(actual = OJ[test,"Purchase"], tune.pred)
+print(confusion)
+print(1- (confusion[2,2] + confusion[1,1]) / (nrow(OJ[test,])))
+```
+
+Now, we try out the same process with different kernels. This is parts f and g
+```{r}
+tune.poly = tune(svm,  Purchase~., data = OJ[train,],kernel = "polynomial", degree = 2, ranges = list(cost = c(.01,.03,.1,.3,1,3,10)))
+
+tune.radial = tune(svm,  Purchase~., data = OJ[train,],kernel = "radial", ranges = list(cost = c(.01,.03,.1,.3,1,3,10)))
+```
+
+```{r}
+#confusion matrices for radial kernel
+tune.pred = predict(tune.radial$best.model, OJ[train,])
+confusion = table(actual = OJ[train,"Purchase"], tune.pred)
+print(confusion)
+print(1- (confusion[2,2] + confusion[1,1]) / (nrow(OJ[train,])))
+
+tune.pred = predict(tune.radial$best.model, OJ[test,])
+confusion = table(actual = OJ[test,"Purchase"], tune.pred)
+print(confusion)
+print(1- (confusion[2,2] + confusion[1,1]) / (nrow(OJ[test,])))
+
+# confusion matrices for polynomial kernel
+tune.pred = predict(tune.poly$best.model, OJ[train,])
+confusion = table(actual = OJ[train,"Purchase"], tune.pred)
+print(confusion)
+print(1- (confusion[2,2] + confusion[1,1]) / (nrow(OJ[train,])))
+
+tune.pred = predict(tune.poly$best.model, OJ[test,])
+confusion = table(actual = OJ[test,"Purchase"], tune.pred)
+print(confusion)
+print(1- (confusion[2,2] + confusion[1,1]) / (nrow(OJ[test,])))
+```
+Part H
+The linear kernel had the best test & CV error, leading for us to believe it's the best kernel to choose in this situation
