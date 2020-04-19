@@ -1,0 +1,43 @@
+---
+title: "Auto SVM"
+output: html_notebook
+---
+
+This is problem 7 of ISLR's Chapter 9 Applied Section
+"In this problem, you will use support vector approaches in order to
+predict whether a given car gets high or low gas mileage based on the
+Auto data set."
+
+```{r}
+library(ISLR)
+library(tidyverse)
+library(e1071)
+
+# Part A - Create a Binary Variable out of mpg of whether a given automobile has mpg above the median or not
+data = Auto
+names(Auto)
+med = median(data[,"mpg"])
+data[,"mpg"] = ifelse(data[,"mpg"] > med, 1, 0)
+
+# Part B - using CV to determine the best cost value for a given support vector
+# Cost of 1 led to the lowest errors, with 11 observations misclassified out of 392
+set.seed(1)
+svm.tune = tune(svm, as.factor(mpg)~., data = data, kernel = "linear", ranges = list(cost = c(.001,.01,.1,1,10,100)))
+summary(svm.tune)
+svm.pred = predict(svm.tune$best.model, data)
+
+
+# Part C - Trying different Kernels
+# Radial Kernel seems to do the best, missing only 1 prediction
+poly.tune = tune(svm,as.factor(mpg)~., data = data, kernel = "polynomial", ranges = list(cost = c(.1,1,10), gamma = c(.5,1,3,5),degree = c(2,3,4)))
+poly.pred = predict(poly.tune$best.model,data)
+
+radial.tune = tune(svm,as.factor(mpg)~., data = data, kernel = "radial", ranges = list(cost = c(.1,1,10), gamma = c(.5,1,3)))
+radial.pred = predict(radial.tune$best.model,data)
+
+# Table D - Table Created to Showcase results
+table(true = data[,"mpg"], svm.pred)
+table(true = data[,"mpg"],poly.pred)
+table(true = data[,"mpg"],radial.pred)
+```
+
