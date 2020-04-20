@@ -1,0 +1,71 @@
+---
+title: "Chapter 10 Lab 2: Clustering"
+output: html_notebook
+---
+
+This is Lab 2 of three of ISLR's Lab Section
+
+```{r}
+# simulate a data with two clusters
+set.seed(2)
+x = matrix(rnorm(50*2),ncol = 2)
+x[1:25,1] = x[1:25,1] + 3
+x[1:25,2] = x[1:25,2] - 4
+
+# perform K-means clustering with K = 2
+km.out = kmeans(x,2,nstart = 20)
+
+# Cluster assignments of the 50 observations are contained in km.out$cluster. Plot also shown below
+km.out$cluster
+plot(x,col=(km.out$cluster + 1), main="K-Means Clustering Results with K = 2", xlab = "", ylab = "", pch = 20, cex = 2)
+
+# Performing K-means with K = 3
+# the two clusters are split up
+# nstart > 1 means that kmeans will run more than once, and the best result will be reported. tot.withinss is the total within-cluster sum of squares
+
+set.seed(4)
+km.out = kmeans(x,3,nstart = 20)
+km.out$tot.withinss
+km.out = kmeans(x,3,nstart = 1)
+km.out$tot.withinss
+```
+
+This next section covers hierarchical clustering
+
+The hclust() function implements hierarchical clustering in R
+```{r}
+# perform hierarchical clustering with euclidian distance as dissimilarity measurement and complete linkage
+hc.complete = hclust(dist(x), method = "complete")
+
+#other forms of linkage used below
+hc.average = hclust(dist(x), method = "average")
+hc.single = hclust(dist(x),method = "single")
+
+# Dendrograms are plotted below
+par(mfrow = c(1,3))
+plot(hc.complete, main = "Complete Linkage", xlab = "", sub = "", cex = .9)
+plot(hc.average, main = "Average Linkage", xlab = "", sub = "", cex = .9)
+plot(hc.single, main = "Single Linkage", xlab = "", sub = "", cex = .9)
+
+# cutree() can be used to determine the cluster labels for each observation associated with a given cut of the dendrogram
+# complete and average linkage do an okay job, but single linkage doesn't do the greatest
+cutree(hc.complete,2)
+cutree(hc.average,2)
+cutree(hc.single,2)
+
+# Four clusters are selected with hc.single
+cutree(hc.single,4)
+
+# Scale the features before performing hierarchical clustering of the observations
+xsc = scale(x)
+plot(hclust(dist(xsc), method ="complete"), main=" Hierarchical
+Clustering with Scaled Features ")
+
+# correlation based distance can be computed using the as.dist()
+# Only makes sense to do for data with at least three features though
+x = matrix(rnorm(30*3),ncol = 3)
+dd = as.dist(1-cor(t(x)))
+plot(hclust(dd, method ="complete"), main=" Complete Linkage
+with Correlation -Based Distance ", xlab="", sub ="")
+```
+
