@@ -1,0 +1,63 @@
+---
+title: "Lab 1: PCA"
+output: html_notebook
+---
+
+This is lab 1 of 3 in ISLR's Chapter 10 Lab Section
+
+In this lab, we perform PCA on the USArrests data set, which is part of
+the base R package. The rows of the data set contain the 50 states, in
+alphabetical order.
+```{r}
+library(ISLR)
+library(tidyverse)
+
+# Load up the USArrests dataset, which is part of the R base package
+states = row.names(USArrests)
+states
+names(USArrests)
+
+# allows for us to apply a function to the columns of a dataset if the input is 2, and the rows if it is 1
+# We see vastly different means and variances
+# if not feature-scaled, PCA would be driven by the Assault parameter
+apply(USArrests,2,mean)
+apply(USArrests, 2, var)
+```
+
+
+```{r}
+# perform principal component analysis using the prcomp() function
+pr.out = prcomp(USArrests, scale = TRUE)
+names(pr.out)
+
+# Center and scale components of pr.out correspond to the means and standard deviations of the variables used for scaling prior to applying PCA
+pr.out$center
+pr.out$scale
+
+# Rotation matrix provides the principal component loadings. Each column of pr.out$rotation contains the corresponding principal component loading vector
+pr.out$rotation
+
+# 50 x 4 matrix x has its columns as the principal component score vectors. Kth column is the kth principal component score vector
+dim(pr.out$x)
+
+#plot the first two principal components in different ways
+biplot(pr.out,scale = 0)
+pr.out$rotation = -pr.out$rotation
+pr.out$x = -pr.out$x
+biplot(pr.out, scale = 0)
+```
+
+```{r}
+# Getting the proportion of variance explained by each PC
+pr.var = pr.out$sdev^2
+pve = pr.var / sum(pr.var)
+pve
+
+# We see that the first principal component explains 62% of the variance, and the next principal component explains 24.7% of the variance.
+# plot of PVE explained by each component, as well as the cumulative PVE
+
+plot(pve,xlab = "Principal Component",ylab = "Proportion of Variance Explained", ylim = c(0,1), type = "b")
+
+plot(cumsum(pve),xlab = "Principal Component",ylab = "Cumulative Proportion of Variance Explained", ylim = c(0,1), type = "b")
+```
+
